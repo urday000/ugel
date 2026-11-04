@@ -2951,6 +2951,8 @@
 // Control de acceso: inicio de sesión con Google y rol según la lista "accesos".
 (function () {
   const OWNER = "luanaprado.0a@gmail.com";
+  // La verificación solo empieza cuando la persona pulsa "Entrar con Google".
+  let entroPorBoton = false;
   const gate = document.getElementById("gateAcceso");
   const msg = document.getElementById("gateMsg");
   function bloquearEscrituras() {
@@ -2969,6 +2971,7 @@
       msg.textContent = "Este panel no puede iniciar sesión desde el archivo guardado en tu computadora. Ábrelo desde una dirección web (http://localhost o https://...). Revisa las instrucciones que te envié.";
       return;
     }
+    entroPorBoton = true;
     try {
       const proveedor = new firebase.auth.GoogleAuthProvider();
       proveedor.setCustomParameters({ prompt: "select_account" });
@@ -2977,6 +2980,8 @@
     catch (e) { msg.textContent = "No se pudo iniciar sesión: " + e.message; }
   });
   auth.onAuthStateChanged(async user => {
+    // Si quedó una sesión de Google abierta al cargar la página, se cierra sin verificarla.
+    if (user && !entroPorBoton) { await auth.signOut(); return; }
     if (!user) {
       rolActual = null; emailActual = null; gate.hidden = false;
       if ((msg.textContent || "").startsWith("Verificando")) msg.textContent = "";
