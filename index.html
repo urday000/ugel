@@ -686,6 +686,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   .rac-prom { font-size:.9rem; color:var(--muted); }
   .rac-prom b { color:var(--text); }
   .lema-portada { margin:12px 0 0; font-weight:800; letter-spacing:.01em; color:#f5d86b; font-size:clamp(1rem,1.6vw,1.2rem); }
+  .rac-flex { font-size:.92rem; background:#fef9e7; border:1px solid #f5d86b; border-radius:10px; padding:8px 12px; margin:6px 0 10px; color:var(--text); }
 </style>
 </head>
 <body>
@@ -1098,7 +1099,9 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         const nv = sinTildes(m.nivel || "");
         const clave = nv.includes("inicial") ? "inicial" : nv.includes("primaria") ? "primaria" : nv.includes("secundaria") ? "secundaria" : null;
         const regla = clave && tipoIE ? MINIMOS_RVM071.find(r => r.nivel === clave && r.tipo.test(tipoIE)) : null;
-        const minimo = regla ? minPara(regla) : null;
+        const flexMin = (ie.criteriosFlexibles || {})[m.codigo]?.minimo;
+        const flexMotivo = (ie.criteriosFlexibles || {})[m.codigo]?.motivo || "";
+        const minimo = flexMin ? flexMin : (regla ? minPara(regla) : null);
         if (clave === "inicial") return inicialBloque(m);
         const grados = (m.detalle || []).filter(g => (Number(g.total) || 0) || (Number(g.secciones) || 0));
         const tarjetas = grados.map(g => {
@@ -1143,6 +1146,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
           </div>`;
         }).join("");
         return `<h3 class="rac-nivel">${esc(m.nivel)} · código ${esc(m.codigo || "—")}</h3>
+          ${flexMin ? `<p class="rac-flex">Criterio flexible: <b>${flexMin} estudiantes por sección</b>${flexMotivo ? " (" + esc(flexMotivo) + ")" : ""}. Reemplaza el parámetro de la RVM para este nivel.</p>` : ""}
           ${tarjetas ? `<div class="rac-grid">${tarjetas}</div>` : `<p class="vacio">Sin detalle por grado para este nivel.</p>`}`;
       }).join("");
       return `${cabeza}

@@ -595,6 +595,14 @@
           <h3>Fotografías (carrusel)</h3>
           <label>URLs de imágenes, una por línea. La primera es la portada.
             <textarea name="imagenes" data-fotos>${esc(fotos.join("\n"))}</textarea></label>
+          <div class="criterio-flex">
+            <b>Criterio flexible por nivel</b>
+            <p class="nota">Si un aula no permite el mínimo de la RVM, escribe el mínimo que corresponde a esta IE. Vacío = se usa el parámetro normal.</p>
+            ${(v.matriculaPorNivel || []).map(m => `<div class="grid-2">
+              <label>${esc(m.nivel)} (${esc(m.codigo || "sin código")}) · estudiantes por sección<input name="flexMin_${esc(m.codigo || "")}" type="number" min="1" max="200" value="${esc(v.criteriosFlexibles?.[m.codigo]?.minimo ?? "")}"></label>
+              <label>Motivo<input name="flexMot_${esc(m.codigo || "")}" value="${esc(v.criteriosFlexibles?.[m.codigo]?.motivo ?? "")}" placeholder="Ej. aula estrecha"></label>
+            </div>`).join("") || `<p class="nota">Primero carga el detalle de matrícula de esta IE.</p>`}
+          </div>
           <input type="hidden" name="fotoAjustes" value="${esc(JSON.stringify(v.fotoAjustes || {}))}">
           <div id="ajusteFoto" class="ajuste-foto" hidden></div>
           <div class="foto-gestor">
@@ -2049,6 +2057,20 @@
   };
   let portadaCfg = null;
   let analisisCfg = null;
+  // Lee los criterios flexibles por nivel (código modular) del formulario de la IE.
+  function leerCriteriosFlex() {
+    const out = {};
+    document.querySelectorAll('input[name^="flexMin_"]').forEach(inp => {
+      const cod = inp.name.slice("flexMin_".length);
+      const valor = inp.value.trim();
+      if (!cod || valor === "") return;
+      const n = Number(valor);
+      if (!Number.isInteger(n) || n < 1 || n > 200) throw new Error("El criterio flexible debe ser un número entero de 1 a 200.");
+      const motivo = (document.querySelector(`input[name="flexMot_${cod}"]`)?.value || "").trim();
+      out[cod] = { minimo: n, motivo };
+    });
+    return out;
+  }
   // ---------- Accesos ----------
   function vencimientoDe(x) { return x.vence ? x.vence.toDate() : null; }
   function estadoAcceso(x) {
@@ -2641,6 +2663,7 @@
       personalPublico: parsePersonal(get("personalPublico")),
       subdirector: get("subdirector"), anexo: get("anexo"), condicion: get("condicion"),
       fotoAjustes: (() => { try { return JSON.parse(get("fotoAjustes") || "{}"); } catch (e) { return {}; } })(),
+      criteriosFlexibles: leerCriteriosFlex(),
       ...(matriculaNueva ? { matriculaPorNivel: matriculaNueva, estudiantes: matriculaNueva.reduce((t, m) => t + (m.matricula || 0), 0) } : {})
     };
     const id = f.dataset.id;
