@@ -100,9 +100,60 @@
   input:focus, select:focus, textarea:focus { outline:2px solid var(--gold); border-color:transparent; }
   .badge { background:var(--accent-soft); color:var(--accent); }
   th { color:var(--accent-2); }
+
+/* Gestión de portada de instituciones, sin modificar el modelo de datos */
+  .foto-gestor{display:grid;grid-template-columns:minmax(240px,1.05fr) minmax(0,1fr);gap:18px;margin:14px 0;padding:16px;border:1px solid var(--border);border-radius:16px;background:#f7faf8}
+.foto-principal{position:relative;aspect-ratio:16/10;border-radius:14px;background:#dceee3;overflow:hidden;display:grid;place-items:center;color:#48685b;text-align:center;font-weight:650}
+.foto-principal img{width:100%;height:100%;object-fit:cover;display:block}
+.foto-portada-etiqueta{position:absolute;top:10px;left:10px;background:#0b5c3a;color:#fff;border-radius:999px;padding:5px 12px;font-size:.8rem}
+.foto-editor-ayuda{font-size:.88rem;color:var(--muted);margin:0 0 10px}
+.miniatura-edit{padding:8px;background:white;border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.miniatura-edit img{width:100%;height:95px;object-fit:cover;border-radius:9px}
+.miniatura-edit .mini-btns{display:flex;gap:5px;flex-wrap:wrap}
+.miniatura-edit .mini-btns button{font-size:.74rem;padding:7px 9px}
+.miniatura-edit.es-portada{border:2px solid #0e8f58}
+.miniatura-edit small{color:var(--muted)}
+#miniaturas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.foto-gestor{grid-template-columns:1fr}
+#miniaturas{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+  .ajuste-foto { margin:12px 0; }
+  .ajuste-caja { display:grid; grid-template-columns:minmax(240px,1fr) minmax(240px,1fr); gap:16px; background:#f7faf8; border:1px solid var(--border); border-radius:16px; padding:14px; }
+  .ajuste-vista { position:relative; aspect-ratio:16/10; border-radius:12px; overflow:hidden; background:#dceee3; }
+  .ajuste-vista img { width:100%; height:100%; object-fit:cover; display:block; }
+  .ajuste-controles { display:grid; gap:10px; align-content:start; }
+  .ajuste-controles label { display:grid; gap:4px; font-size:.9rem; color:var(--muted); }
+  .ajuste-controles input[type=range] { width:100%; }
+  @media(max-width:720px) { .ajuste-caja { grid-template-columns:1fr; } }
+
+  .anexo-combo { position:relative; }
+  .anexo-lista { position:absolute; left:0; right:0; top:100%; margin-top:4px; z-index:60; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 12px 30px rgba(15,50,30,.18); max-height:280px; overflow:auto; display:grid; }
+  .anexo-op { text-align:left; padding:10px 14px; background:none; border:0; border-bottom:1px solid #eef3ef; font:inherit; cursor:pointer; color:var(--text); }
+  .anexo-op:hover { background:#f2f8f4; }
+  .anexo-nuevo { color:var(--accent); font-weight:700; }
+  .anexo-vacio { padding:10px 14px; color:var(--muted); font-size:.9rem; }
+
+  .anexo-cab { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f7faf8; border-bottom:1px solid var(--border); font-size:.85rem; color:var(--muted); position:sticky; top:0; }
+  .anexo-x { border:0; background:none; font-size:1.3rem; line-height:1; color:var(--muted); cursor:pointer; padding:0 4px; }
+  .anexo-x:hover { color:var(--text); }
+
+  .gate { position:fixed; inset:0; z-index:9999; background:linear-gradient(135deg,#0f321e,#1d5a37); display:grid; place-items:center; padding:20px; }
+  .gate[hidden] { display:none; }
+  .gate-caja { background:#fff; border-radius:20px; padding:32px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+  .gate-caja h2 { margin:0 0 8px; color:var(--accent); }
+  .gate-caja p { color:var(--muted); }
+  .gate-caja button { margin-top:12px; }
 </style>
 </head>
 <body>
+<div class="gate" id="gateAcceso">
+  <div class="gate-caja">
+    <h2>Panel de administración</h2>
+    <p>Inicia sesión con tu cuenta de Google autorizada.</p>
+    <button type="button" class="primario" id="btnGoogle">Entrar con Google</button>
+    <p class="nota" id="gateMsg"></p>
+  </div>
+</div>
 
 <header class="top">
   <div class="top-in">
@@ -114,6 +165,8 @@
       <button type="button" data-t="instituciones">Instituciones</button>
       <button type="button" data-t="excel">Importar Excel</button>
       <button type="button" data-t="portada">Portada</button>
+      <button type="button" data-t="accesos" hidden>Accesos</button>
+      <button type="button" data-t="analisis">Análisis</button>
       <button type="button" data-t="personal">Personal</button>
       <button type="button" data-t="historial">Historial</button>
     </nav>
@@ -130,7 +183,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-app-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-auth-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyAFgNjK2x9a1E4Z0JFuforqmX1hulPovYo",
@@ -142,16 +195,27 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  const auth = firebase.auth();
+  const OWNER_EMAIL = "luanaprado.0a@gmail.com";
+  let rolActual = null, emailActual = null, accesosLista = null;
 
   const DISTRITOS_BASE = [
-    { clave:"Aplao", nombre:"Aplao", capital:"Aplao (capital provincial)", anexos:["Querulpa","La Real","Cochate","Caspani","Casquina","Cosos","El Monte","La Central","Nueva Central","Acoy","Andamayo","Ongoro"] },
-    { clave:"Andagua", nombre:"Andagua", capital:"", anexos:[] }, { clave:"Ayo", nombre:"Ayo", capital:"", anexos:[] },
-    { clave:"Chachas", nombre:"Chachas", capital:"", anexos:[] }, { clave:"Chilcaymarca", nombre:"Chilcaymarca", capital:"", anexos:[] },
-    { clave:"Choco", nombre:"Choco", capital:"", anexos:[] }, { clave:"Huancarqui", nombre:"Huancarqui", capital:"", anexos:[] },
-    { clave:"Machaguay", nombre:"Machaguay", capital:"", anexos:[] }, { clave:"Orcopampa", nombre:"Orcopampa", capital:"", anexos:[] },
-    { clave:"Pampacolca", nombre:"Pampacolca", capital:"", anexos:[] }, { clave:"Tipán", nombre:"Tipán", capital:"", anexos:[] },
-    { clave:"Uñón", nombre:"Uñón", capital:"", anexos:[] }, { clave:"Uraca", nombre:"Uraca", capital:"", anexos:[] },
-    { clave:"Viraco", nombre:"Viraco", capital:"", anexos:[] }
+    // Catálogo de anexos y localidades tomado del Excel "IE de Castilla con distrito y anexo.xlsx".
+    // Se conservan las denominaciones tal como aparecen en la fuente, incluidas sus variantes.
+    { clave:"Aplao", nombre:"Aplao", capital:"Aplao (capital provincial)", anexos:["Acoy","Aplao","Caspani","Casquina","Cochate","Cosos","Fundo El Castillo","Hacienda Andamayo","Hacienda La Central","Hacienda La Real","Hacienda Querulpa Chico","La Barranca","La Real","Mamas","Ongoro","San Jose De Huatiapilla","Querulpa","El Monte","Nueva Central","Andamayo","La Central"] },
+    { clave:"Andagua", nombre:"Andagua", capital:"", anexos:["Andagua","Andahua","Jallua / Callhuas","Orahuasto","San Antonio","Soporo"] },
+    { clave:"Ayo", nombre:"Ayo", capital:"", anexos:["Ayo","Subna"] },
+    { clave:"Chachas", nombre:"Chachas", capital:"", anexos:["Chachas","Checotaña","Huaracopalca","Huaracopallca","Huaytapalca","Nahuira","Tolcone / Capilla","Tolconi"] },
+    { clave:"Chilcaymarca", nombre:"Chilcaymarca", capital:"", anexos:["Chapacoco","Chilcaimarca","Chilcaymarca"] },
+    { clave:"Choco", nombre:"Choco", capital:"", anexos:["Choco","Hujuyo","Llanca","Miña","Ojuyo","Pachauma","Pampuyo","Sihuincha"] },
+    { clave:"Huancarqui", nombre:"Huancarqui", capital:"", anexos:["Huancarqui"] },
+    { clave:"Machaguay", nombre:"Machaguay", capital:"", anexos:["Acopallpa","Cotanay","Machaguay","Vista Alegre"] },
+    { clave:"Orcopampa", nombre:"Orcopampa", capital:"", anexos:["Condorhuaycco","Huancarama","La Laguna","Misahuanca","Orcopampa","Rumihuasi","Sarpane","Tintaymarca","Vista Alegre"] },
+    { clave:"Pampacolca", nombre:"Pampacolca", capital:"", anexos:["Pampacolca","Piscopampa","Quiscata","San Antonio","Tuhuallqui"] },
+    { clave:"Tipán", nombre:"Tipán", capital:"", anexos:["Chupacra","Tagre","Tipan","Yacmes"] },
+    { clave:"Uñón", nombre:"Uñón", capital:"", anexos:["Piraucho","Uñon"] },
+    { clave:"Uraca", nombre:"Uraca", capital:"", anexos:["Corire","El Dique","Escalerillas","Goyeneche","Hacienda Cantas","Hacienda Goyeneche","Hacienda Toran","La Candelaria","Mesana","Pedregal","Punta Colorada","Sahuani","Sarcas","Satelite Salvador","Torete","Uracra"] },
+    { clave:"Viraco", nombre:"Viraco", capital:"", anexos:["Arejocha","Costuro","Huami","Pampachacra","Rituy","Unro","Viraco","Yaso"] }
   ];
   const IE_INICIALES = [
     { distrito:"Aplao", nombre:"Colegio Nacional Libertador Castilla de Aplao", tipo:"Instituto de secundaria", codigo:"", direccion:"Av. 21 de Marzo 109, Aplao", info:"", imagenes:[], extras:[] },
@@ -257,6 +321,8 @@
     if (t === "historial" && historial === null) cargarHistorial();
     if (t === "personal" && personalCache === null) cargarPersonal();
     if (t === "portada" && portadaCfg === null) cargarPortadaAdm();
+    if (t === "analisis" && analisisCfg === null) cargarAnalisisAdm();
+    if (t === "accesos" && accesosLista === null) cargarAccesosAdm();
     pintarAdmin();
   }
 
@@ -271,6 +337,8 @@
     else if (tab === "historial") c.innerHTML = vHistorial();
     else if (tab === "personal") { c.innerHTML = vPersonal(); pintarPersonal(); }
     else if (tab === "portada") c.innerHTML = vPortada();
+    else if (tab === "analisis") c.innerHTML = vAnalisis();
+    else if (tab === "accesos") c.innerHTML = vAccesos();
     else c.innerHTML = vExcel();
 
     if (tab === "instituciones" && !editando) pintarListaIE();
@@ -496,7 +564,7 @@
             <label>Tipo<input name="tipo" value="${esc(v.tipo)}" placeholder="Ej. Escuela, Instituto de secundaria"></label>
             <label>Código modular<input name="codigo" value="${esc(v.codigo)}"></label>
             <label>Dirección<input name="direccion" value="${esc(v.direccion)}"></label>
-            <label>Anexo (vacío = sede principal)<input name="anexo" list="listaAnexos" value="${esc(v.anexo)}" placeholder="Ej. Querulpa"><datalist id="listaAnexos">${distritos.flatMap(d => d.anexos).map(a => `<option value="${esc(a)}">`).join("")}</datalist></label>
+            <label class="anexo-combo">Anexo (vacío = sede principal)<input name="anexo" autocomplete="off" value="${esc(v.anexo)}" placeholder="Ej. Querulpa"><div class="anexo-lista" id="listaAnexos" hidden></div></label>
             <label>Zona<select name="zona">
               <option value="">Sin dato</option>
               <option ${zona === "Urbana" ? "selected" : ""}>Urbana</option>
@@ -524,12 +592,13 @@
           <h3>Fotografías (carrusel)</h3>
           <label>URLs de imágenes, una por línea. La primera es la portada.
             <textarea name="imagenes" data-fotos>${esc(fotos.join("\n"))}</textarea></label>
-          <div class="thumbs" id="miniaturas"></div>
+          <input type="hidden" name="fotoAjustes" value="${esc(JSON.stringify(v.fotoAjustes || {}))}">
+          <div id="ajusteFoto" class="ajuste-foto" hidden></div>
+          <div class="foto-gestor">
+            <div><div class="foto-principal" id="fotoPrincipalVista"><span>Esta institución aún no tiene portada</span></div></div>
+            <div><strong>Fotografías del colegio</strong><p class="foto-editor-ayuda">Sube fotografías o añade enlaces y elige la imagen principal.</p><div id="miniaturas"></div></div>
+          </div>
           <div class="fotos-acciones" style="margin-top:10px;display:grid;gap:10px">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <input type="file" id="fotoArchivo" accept="image/*" multiple style="width:auto">
-              <span class="nota" id="fotoEstado"></span>
-            </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <input type="url" id="fotoUrl" placeholder="https://… (enlace directo a la imagen)" style="flex:1;min-width:240px">
               <button type="button" data-a="foto-url">Agregar URL</button>
@@ -703,7 +772,6 @@
   }
 
   // ---------- Fotos: subida a Firebase Storage y URLs ----------
-  let storageAdm = null;
   function agregarFotoUrl(url) {
     const ta = document.querySelector("textarea[data-fotos]");
     if (!ta) return;
@@ -718,48 +786,6 @@
     ta.value = urls.join("\n");
     ta.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  function comprimirImagen(file, max = 1280) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const k = Math.min(1, max / Math.max(img.width, img.height));
-        const c = document.createElement("canvas");
-        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(b => b ? resolve(b) : reject(new Error("No se pudo procesar la imagen")), "image/jpeg", 0.82);
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("El archivo no es una imagen válida")); };
-      img.src = url;
-    });
-  }
-  async function subirFoto(file) {
-    if (!storageAdm) storageAdm = firebase.storage();
-    const blob = await comprimirImagen(file);
-    const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 60) || "foto";
-    const ref = storageAdm.ref(`instituciones/${Date.now()}_${base}.jpg`);
-    await ref.put(blob, { contentType: "image/jpeg" });
-    return ref.getDownloadURL();
-  }
-  async function subirFotosSeleccionadas(files) {
-    const estado = $("fotoEstado");
-    let ok = 0;
-    for (const [i, f] of [...files].entries()) {
-      if (estado) estado.textContent = `Subiendo ${i + 1} de ${files.length}…`;
-      try {
-        agregarFotoUrl(await subirFoto(f));
-        ok++;
-      } catch (err) {
-        aviso(`No se pudo subir "${f.name}": ${err.message}`);
-      }
-    }
-    if (estado) estado.textContent = `${ok} de ${files.length} foto(s) subida(s).`;
-    const form = document.querySelector('form[data-form="ie"]');
-    if (form) formSucio = true;
-  }
-
-  // ---------- Estudiantes por grado (editable) ----------
   function filaDetalle(d) {
     const tot = (Number(d.hombres) || 0) + (Number(d.mujeres) || 0);
     return `<tr class="fila-det">
@@ -806,14 +832,109 @@
     tr.querySelector("[data-tot]").textContent = h + m;
   }
 
+  function urlImagenValida(url) {
+    try { const u = new URL(url); return (u.protocol === "https:" || u.protocol === "http:") && !!u.hostname; }
+    catch (_) { return false; }
+  }
+
+  function marcarFotoPortada(i) {
+    const ta = document.querySelector("textarea[data-fotos]");
+    if (!ta) return;
+    const urls = ta.value.split(/[\n;,]/).map(x => x.trim()).filter(Boolean);
+    if (i < 0 || i >= urls.length || i === 0) return;
+    const [seleccionada] = urls.splice(i, 1);
+    urls.unshift(seleccionada);
+    ta.value = urls.join("\n");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    formSucio = true;
+    aviso("Portada seleccionada. Pulsa Guardar para publicar el cambio.", true);
+  }
+
+  // ---------- Ajuste de posición y tamaño de cada foto ----------
+  function fotoAjustesActuales() {
+    const h = document.querySelector('input[name="fotoAjustes"]');
+    try { return JSON.parse(h?.value || "{}"); } catch (e) { return {}; }
+  }
+  function estiloAjuste(url) {
+    const a = fotoAjustesActuales()[url] || { x: 50, y: 50, z: 100 };
+    return `object-position:${a.x}% ${a.y}%;transform:scale(${a.z / 100});transform-origin:${a.x}% ${a.y}%`;
+  }
+  function actualizarVistaAjuste() {
+    const cont = $("ajusteFoto");
+    if (!cont || cont.hidden) return;
+    const x = cont.querySelector('[data-aj="x"]').value, y = cont.querySelector('[data-aj="y"]').value, z = cont.querySelector('[data-aj="z"]').value;
+    cont.querySelector("#ajX").textContent = x;
+    cont.querySelector("#ajY").textContent = y;
+    cont.querySelector("#ajZ").textContent = z;
+    const img = cont.querySelector(".ajuste-vista img");
+    if (img) img.setAttribute("style", `object-position:${x}% ${y}%;transform:scale(${z / 100});transform-origin:${x}% ${y}%`);
+  }
+  function abrirAjusteFoto(i) {
+    const ta = document.querySelector("textarea[data-fotos]");
+    const urls = ta ? ta.value.split(/[\n;,]/).map(x => x.trim()).filter(Boolean) : [];
+    const url = urls[i];
+    const cont = $("ajusteFoto");
+    if (!url || !cont) return;
+    const a = fotoAjustesActuales()[url] || { x: 50, y: 50, z: 100 };
+    cont.hidden = false;
+    cont.dataset.url = url;
+    cont.innerHTML = `<div class="ajuste-caja">
+      <div class="ajuste-vista"><img src="${esc(url)}" alt="Vista previa del ajuste" style="object-position:${a.x}% ${a.y}%;transform:scale(${a.z / 100});transform-origin:${a.x}% ${a.y}%"></div>
+      <div class="ajuste-controles">
+        <strong>Ajustar la foto</strong>
+        <label>Posición horizontal: <b id="ajX">${a.x}</b>%<input type="range" min="0" max="100" value="${a.x}" data-aj="x"></label>
+        <label>Posición vertical: <b id="ajY">${a.y}</b>%<input type="range" min="0" max="100" value="${a.y}" data-aj="y"></label>
+        <label>Tamaño (zoom): <b id="ajZ">${a.z}</b>%<input type="range" min="100" max="250" value="${a.z}" data-aj="z"></label>
+        <p class="nota">Mueve los deslizadores hasta que se vea bien la puerta de la IE.</p>
+        <div class="acciones">
+          <button type="button" class="primario" data-a="ajuste-aplicar">Aplicar</button>
+          <button type="button" data-a="ajuste-reset">Restablecer</button>
+          <button type="button" data-a="ajuste-cerrar">Cerrar</button>
+        </div>
+      </div></div>`;
+    cont.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function aplicarAjusteFoto() {
+    const cont = $("ajusteFoto");
+    if (!cont || !cont.dataset.url) return;
+    const h = document.querySelector('input[name="fotoAjustes"]');
+    const obj = fotoAjustesActuales();
+    obj[cont.dataset.url] = { x: Number(cont.querySelector('[data-aj="x"]').value), y: Number(cont.querySelector('[data-aj="y"]').value), z: Number(cont.querySelector('[data-aj="z"]').value) };
+    if (h) h.value = JSON.stringify(obj);
+    formSucio = true;
+    cont.hidden = true;
+    pintarMiniaturas();
+    aviso("Ajuste aplicado. Pulsa Guardar para publicarlo.", true);
+  }
+  function restablecerAjusteFoto() {
+    const cont = $("ajusteFoto");
+    if (!cont || !cont.dataset.url) return;
+    const h = document.querySelector('input[name="fotoAjustes"]');
+    const obj = fotoAjustesActuales();
+    delete obj[cont.dataset.url];
+    if (h) h.value = JSON.stringify(obj);
+    formSucio = true;
+    cont.hidden = true;
+    pintarMiniaturas();
+    aviso("Ajuste restablecido. Pulsa Guardar para publicarlo.", true);
+  }
+
   function pintarMiniaturas() {
     const ta = document.querySelector("textarea[data-fotos]");
     const cont = $("miniaturas");
+    const vista = $("fotoPrincipalVista");
     if (!ta || !cont) return;
     const urls = ta.value.split(/[\n;,]/).map(s => s.trim()).filter(Boolean);
-    cont.innerHTML = urls.map((u, i) => `<div style="display:grid;justify-items:center;gap:4px">
-      <img src="${esc(u)}" alt="" onerror="this.style.opacity=.25" style="width:110px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
-      <button type="button" class="mini peligro" data-a="foto-quitar" data-i="${i}">Quitar</button></div>`).join("");
+    const seguras = urls.map(u => /^https?:\/\//i.test(u) ? u : "");
+    if (vista) vista.innerHTML = seguras[0]
+      ? `<img src="${esc(seguras[0])}" alt="Vista previa de portada" style="${esc(estiloAjuste(seguras[0]))}" onerror="this.style.display='none'"><span class="foto-portada-etiqueta">Portada principal</span>`
+      : '<span>Esta institución aún no tiene portada</span>';
+    cont.innerHTML = urls.length ? urls.map((u, i) => `<div class="miniatura-edit ${i === 0 ? "es-portada" : ""}">
+      <img src="${esc(seguras[i])}" alt="Fotografía ${i+1}" loading="lazy" style="${esc(estiloAjuste(seguras[i]))}" onerror="this.style.opacity=.25">
+      <small>${i === 0 ? "★ Portada actual" : "Fotografía " + (i+1)}</small>
+      <div class="mini-btns"><button type="button" class="mini" data-a="foto-ajustar" data-i="${i}">✎ Ajustar</button>${i ? `<button type="button" class="primario" data-a="foto-portada" data-i="${i}">Usar como portada</button>` : ""}
+      <button type="button" class="peligro" data-a="foto-quitar" data-i="${i}">Quitar</button></div></div>`).join("")
+      : '<p class="nota">Sin fotos. Pega una URL de imagen para añadirla.</p>';
   }
 
   // ---------- Historial ----------
@@ -1384,7 +1505,8 @@
     for (let j = (cSecc >= 0 ? cSecc : cGr) + 1; j < filas[h].length; j++) {
       if (String(filas[h][j] ?? "").trim()) labActual = String(filas[h][j]).replace(/\s+/g, " ").trim();
       const sub = quitaTildes(subHdr[j]);
-      if (similitudTxt(sub, "hombres") >= 0.75 || similitudTxt(sub, "mujeres") >= 0.75) colsGrado.push({ j, lab: labActual, sexo: similitudTxt(sub, "hombres") >= 0.75 ? "H" : "M" });
+      if (sub.includes("sec")) colsGrado.push({ j, lab: labActual, sexo: "S" });
+      else if (similitudTxt(sub, "hombres") >= 0.75 || similitudTxt(sub, "mujeres") >= 0.75) colsGrado.push({ j, lab: labActual, sexo: similitudTxt(sub, "hombres") >= 0.75 ? "H" : "M" });
     }
     const distritoDeTxt = t => {
       const n = quitaTildes(t);
@@ -1414,12 +1536,12 @@
       const nivelCorto = nivelTxt.split(" - ").slice(1).join(" - ").trim() || nivelTxt;
       const porGrado = new Map();
       colsGrado.forEach(cg => {
-        const d = porGrado.get(cg.lab) || { grado: cg.lab, hombres: 0, mujeres: 0 };
-        d[cg.sexo === "H" ? "hombres" : "mujeres"] = Number(r[cg.j]) || 0;
+        const d = porGrado.get(cg.lab) || { grado: cg.lab, hombres: 0, mujeres: 0, secciones: 0 };
+        d[cg.sexo === "H" ? "hombres" : cg.sexo === "M" ? "mujeres" : "secciones"] = Number(r[cg.j]) || 0;
         porGrado.set(cg.lab, d);
       });
       g.niveles.push({
-        nivel: nivelCorto, codigo: cod, tipoIE: arreglarTexto(r[cTipo]),
+        nivel: nivelCorto, codigo: cod, tipoIE: "",
         matricula: Number(r[cTot]) || 0, definitiva: Number(r[cDef]) || 0,
         enProceso: Number(r[cProc]) || 0, grados: Number(r[cGr]) || 0,
         secciones: Number(r[cSecc]) || 0,
@@ -1917,11 +2039,213 @@
     eyebrow: "Municipalidad Provincial de Castilla · Aplao",
     titulo: "Directorio de instituciones educativas",
     subtitulo: "Consulta las instituciones de la provincia de Castilla: ubicación, datos, personal y anexos.",
+    lema: "UGEL Castilla: Más innovación, mejores resultados.",
     boton1Texto: "Ver mapa de instituciones", boton1Accion: "mapa", boton1Url: "",
     boton2Texto: "Explorar distritos", boton2Accion: "distritos", boton2Url: "",
     mostrarBotones: true
   };
   let portadaCfg = null;
+  let analisisCfg = null;
+  // ---------- Accesos ----------
+  function vencimientoDe(x) { return x.vence ? x.vence.toDate() : null; }
+  function estadoAcceso(x) {
+    if (!x.activo) return "Revocado";
+    const v = vencimientoDe(x);
+    return v && v <= new Date() ? "Vencido" : "Vigente";
+  }
+  // Cuántos administradores vigentes quedan, sin contar a una persona.
+  function adminsVigentes(exceptoEmail) {
+    return (accesosLista || []).filter(x => x.rol === "administrador" && x.id !== exceptoEmail && estadoAcceso(x) === "Vigente").length;
+  }
+  async function cargarAccesosAdm() {
+    try {
+      const snap = await db.collection("accesos").get();
+      accesosLista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      accesosLista = [];
+      aviso("No se pudieron leer los accesos: " + e.message);
+    }
+    pintarAdmin();
+  }
+  function vAccesos() {
+    if (rolActual !== "administrador") return `<h1 class="titulo">Accesos</h1><p class="vacio">Solo un administrador de accesos puede ver esta sección.</p>`;
+    if (accesosLista === null) return `<h1 class="titulo">Accesos</h1><p class="vacio">Cargando…</p>`;
+    const filas = accesosLista.slice().sort((a, b) => a.id.localeCompare(b.id)).map(x => {
+      const v = vencimientoDe(x);
+      const vig = v ? `hasta ${v.toLocaleDateString("es-PE")}` : "permanente";
+      const esOwner = x.id === OWNER_EMAIL;
+      return `<tr>
+        <td>${esc(x.id)}${esOwner ? " <small>(propietario)</small>" : ""}</td>
+        <td>${esc(x.rol)}</td>
+        <td>${esc(vig)}</td>
+        <td>${esc(estadoAcceso(x))}</td>
+        <td>${esOwner ? "—" : `<button type="button" class="mini" data-a="acceso-toggle" data-id="${esc(x.id)}">${x.activo ? "Revocar" : "Reactivar"}</button>
+          <button type="button" class="mini peligro" data-a="acceso-quitar" data-id="${esc(x.id)}">Quitar</button>`}</td>
+      </tr>`;
+    }).join("");
+    return `<h1 class="titulo">Accesos</h1>
+      <p class="nota">Agrega a tus colegas como visitantes, editores o administradores de accesos. Puedes darles acceso permanente o hasta una fecha. Siempre debe quedar al menos un administrador de accesos.</p>
+      <div class="panel">
+        <h3>Dar o cambiar un acceso</h3>
+        <div class="grid-2">
+          <label>Correo de Google<input id="accEmail" type="email" placeholder="correo@gmail.com"></label>
+          <label>Rol<select id="accRol"><option value="visitante">Visitante (solo ver)</option><option value="editor">Editor (ver y editar)</option><option value="administrador">Administrador de accesos</option></select></label>
+          <label>Vigencia<select id="accTipo"><option value="permanente">Permanente</option><option value="fecha">Hasta una fecha</option></select></label>
+          <label>Fecha de vencimiento<input id="accFecha" type="date"></label>
+        </div>
+        <div class="acciones" style="margin-top:12px"><button type="button" class="primario" data-a="acceso-guardar">Guardar acceso</button></div>
+      </div>
+      <div class="tabla" style="margin-top:16px"><table>
+        <thead><tr><th>Correo</th><th>Rol</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="5">Sin accesos registrados.</td></tr>`}</tbody>
+      </table></div>`;
+  }
+  async function guardarAcceso() {
+    if (rolActual !== "administrador") { aviso("Solo un administrador de accesos puede hacer esto."); return; }
+    const email = (document.getElementById("accEmail")?.value || "").trim().toLowerCase();
+    const rol = document.getElementById("accRol")?.value;
+    const tipo = document.getElementById("accTipo")?.value;
+    const fecha = document.getElementById("accFecha")?.value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { aviso("Escribe un correo válido."); return; }
+    if (tipo === "fecha" && !fecha) { aviso("Elige la fecha de vencimiento."); return; }
+    if (email === OWNER_EMAIL && rol !== "administrador") { aviso("El propietario debe seguir siendo administrador de accesos."); return; }
+    const anterior = (accesosLista || []).find(x => x.id === email);
+    if (anterior && anterior.rol === "administrador" && rol !== "administrador" && adminsVigentes(email) < 1) {
+      aviso("Debe quedar al menos un administrador de accesos."); return;
+    }
+    const datos = {
+      email, rol, activo: true,
+      vence: tipo === "fecha" ? firebase.firestore.Timestamp.fromDate(new Date(fecha + "T23:59:59")) : null,
+      actualizado: firebase.firestore.FieldValue.serverTimestamp(), por: emailActual
+    };
+    await db.collection("accesos").doc(email).set(datos, { merge: true });
+    await registrarHistorial("Accesos", anterior ? "Acceso modificado" : "Acceso agregado", `${email} · ${rol} · ${tipo === "fecha" ? "hasta " + fecha : "permanente"}`);
+    await cargarAccesosAdm();
+    aviso("Acceso guardado.", true);
+  }
+  async function cambiarActivoAcceso(id) {
+    if (rolActual !== "administrador") { aviso("Solo un administrador de accesos puede hacer esto."); return; }
+    if (id === OWNER_EMAIL) { aviso("El acceso del propietario no se puede revocar."); return; }
+    const x = (accesosLista || []).find(y => y.id === id);
+    if (!x) return;
+    if (x.activo && x.rol === "administrador" && adminsVigentes(id) < 1) { aviso("Debe quedar al menos un administrador de accesos."); return; }
+    await db.collection("accesos").doc(id).update({ activo: !x.activo, actualizado: firebase.firestore.FieldValue.serverTimestamp(), por: emailActual });
+    await registrarHistorial("Accesos", x.activo ? "Acceso revocado" : "Acceso reactivado", id);
+    await cargarAccesosAdm();
+  }
+  async function quitarAcceso(id) {
+    if (rolActual !== "administrador") { aviso("Solo un administrador de accesos puede hacer esto."); return; }
+    if (id === OWNER_EMAIL) { aviso("El acceso del propietario no se puede quitar."); return; }
+    const x = (accesosLista || []).find(y => y.id === id);
+    if (!x) return;
+    if (x.rol === "administrador" && adminsVigentes(id) < 1) { aviso("Debe quedar al menos un administrador de accesos."); return; }
+    if (!confirm(`¿Quitar el acceso de ${id}?`)) return;
+    await db.collection("accesos").doc(id).delete();
+    await registrarHistorial("Accesos", "Acceso quitado", id);
+    await cargarAccesosAdm();
+  }
+  async function cargarAnalisisAdm() {
+    try {
+      const doc = await db.collection("config").doc("analisis").get();
+      analisisCfg = doc.exists && typeof doc.data().tolerancia === "number" ? doc.data() : { tolerancia: 4 };
+    } catch (e) {
+      analisisCfg = { tolerancia: 4 };
+      aviso("No se pudo leer la configuración de análisis: " + e.message);
+    }
+    pintarAdmin();
+  }
+  const ANALISIS_REGLAS = [
+    { id: "inicial-unidocente", modalidad: "EBR", nivel: "Inicial", caracteristica: "Unidocente", urbana: null, rural: 15 },
+    { id: "inicial-polidocente", modalidad: "EBR", nivel: "Inicial", caracteristica: "Polidocente completo o incompleto", urbana: 25, rural: 20 },
+    { id: "primaria-unidocente", modalidad: "EBR", nivel: "Primaria", caracteristica: "Unidocente", urbana: null, rural: 15 },
+    { id: "primaria-multigrado", modalidad: "EBR", nivel: "Primaria", caracteristica: "Polidocente multigrado", urbana: 25, rural: 20 },
+    { id: "primaria-polidocente", modalidad: "EBR", nivel: "Primaria", caracteristica: "Polidocente completo", urbana: 30, rural: 25 },
+    { id: "secundaria-polidocente", modalidad: "EBR", nivel: "Secundaria", caracteristica: "Polidocente completo", urbana: 30, rural: 25 }
+  ];
+  function inicialCfgAdm() {
+    const c = (analisisCfg && analisisCfg.inicial) || {};
+    return {
+      urbana: { rojoHasta: 30, amarilloHasta: 44, verdeHasta: 50, ...(c.urbana || {}) },
+      rural: { rojoHasta: 25, amarilloHasta: 44, verdeHasta: 50, ...(c.rural || {}) }
+    };
+  }
+  function vAnalisis() {
+    if (analisisCfg === null) return `<h1 class="titulo">Análisis</h1><p class="vacio">Cargando…</p>`;
+    const cfgR = analisisCfg.reglas || {};
+    const tolDef = analisisCfg.tolerancia ?? 4;
+    const filas = ANALISIS_REGLAS.map(r => {
+      const c = cfgR[r.id] || {};
+      const minU = "minU" in c ? c.minU : r.urbana;
+      const minR = "minR" in c ? c.minR : r.rural;
+      const tolU = typeof c.tolU === "number" ? c.tolU : tolDef;
+      const tolR = typeof c.tolR === "number" ? c.tolR : tolDef;
+      return `<tr data-reg="${r.id}">
+        <td>${esc(r.modalidad)}</td><td>${esc(r.nivel)}</td><td>${esc(r.caracteristica)}</td>
+        <td><input class="an-in" type="number" min="1" max="200" data-f="minU" value="${minU ?? ""}" placeholder="no aplica"></td>
+        <td><input class="an-in" type="number" min="1" max="200" data-f="minR" value="${minR ?? ""}" placeholder="no aplica"></td>
+        <td><input class="an-in" type="number" min="0" max="10" data-f="tolU" value="${tolU}"></td>
+        <td><input class="an-in" type="number" min="0" max="10" data-f="tolR" value="${tolR}"></td>
+      </tr>`;
+    }).join("");
+    return `<h1 class="titulo">Análisis de racionalización</h1>
+      <p class="nota">Cada fila es un parámetro de la RVM 071-2024. Define el mínimo por sección y la tolerancia de flexibilidad para zona urbana y para zona rural. Mínimo vacío = la tabla no aplica en esa zona. Tolerancia: faltantes hasta ese número dan amarillo; más dan rojo. Un exceso siempre da amarillo.</p>
+      <div class="panel">
+        <label>Tolerancia por defecto (si una fila no tiene valor propio)
+          <input id="anTolDefecto" type="number" min="0" max="10" value="${tolDef}" class="an-in">
+        </label>
+        <div class="tabla" style="margin-top:12px"><table>
+          <thead><tr><th>Modalidad</th><th>Nivel</th><th>Característica</th><th>Mínimo urbana</th><th>Mínimo rural</th><th>Tolerancia urbana</th><th>Tolerancia rural</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table></div>
+        <h3 style="margin-top:18px">Criterio temporal de Inicial (por total del nivel)</h3>
+        <p class="nota">Tomado de los ejemplos de la UGEL (2 docentes, 2 secciones). Rojo: hasta el valor indicado. Amarillo: desde rojo+1 hasta amarillo hasta. Verde: desde amarillo hasta+1 hasta verde hasta. Más de verde hasta: desdoblar secciones.</p>
+        <div class="tabla"><table>
+          <thead><tr><th>Zona</th><th>Rojo hasta</th><th>Amarillo hasta</th><th>Verde hasta</th></tr></thead>
+          <tbody>
+            <tr><td>Urbana</td><td><input class="an-in" type="number" min="1" max="200" id="inRojoU" value="${inicialCfgAdm().urbana.rojoHasta}"></td><td><input class="an-in" type="number" min="1" max="200" id="inAmarU" value="${inicialCfgAdm().urbana.amarilloHasta}"></td><td><input class="an-in" type="number" min="1" max="200" id="inVerdeU" value="${inicialCfgAdm().urbana.verdeHasta}"></td></tr>
+            <tr><td>Rural</td><td><input class="an-in" type="number" min="1" max="200" id="inRojoR" value="${inicialCfgAdm().rural.rojoHasta}"></td><td><input class="an-in" type="number" min="1" max="200" id="inAmarR" value="${inicialCfgAdm().rural.amarilloHasta}"></td><td><input class="an-in" type="number" min="1" max="200" id="inVerdeR" value="${inicialCfgAdm().rural.verdeHasta}"></td></tr>
+          </tbody>
+        </table></div>
+        <div class="acciones" style="margin-top:12px"><button type="button" class="primario" data-a="analisis-guardar">Guardar parámetros</button></div>
+      </div>`;
+  }
+  async function guardarAnalisis() {
+    const tolDef = Number(document.getElementById("anTolDefecto")?.value);
+    if (!Number.isInteger(tolDef) || tolDef < 0 || tolDef > 10) { aviso("La tolerancia por defecto debe ser un entero de 0 a 10."); return; }
+    const reglas = {};
+    for (const r of ANALISIS_REGLAS) {
+      const fila = document.querySelector(`tr[data-reg="${r.id}"]`);
+      if (!fila) continue;
+      const leer = f => fila.querySelector(`[data-f="${f}"]`).value.trim();
+      const minU = leer("minU") === "" ? null : Number(leer("minU"));
+      const minR = leer("minR") === "" ? null : Number(leer("minR"));
+      const tolU = Number(leer("tolU")), tolR = Number(leer("tolR"));
+      const minOk = v => v === null || (Number.isInteger(v) && v >= 1 && v <= 200);
+      const tolOk = v => Number.isInteger(v) && v >= 0 && v <= 10;
+      if (!minOk(minU) || !minOk(minR) || !tolOk(tolU) || !tolOk(tolR)) {
+        aviso(`Revisa la fila ${r.nivel} · ${r.caracteristica}: mínimos de 1 a 200 y tolerancias de 0 a 10, sin decimales.`);
+        return;
+      }
+      reglas[r.id] = { minU, minR, tolU, tolR };
+    }
+    const n = id => Number(document.getElementById(id)?.value);
+    const inicial = {
+      urbana: { rojoHasta: n("inRojoU"), amarilloHasta: n("inAmarU"), verdeHasta: n("inVerdeU") },
+      rural: { rojoHasta: n("inRojoR"), amarilloHasta: n("inAmarR"), verdeHasta: n("inVerdeR") }
+    };
+    for (const z of ["urbana", "rural"]) {
+      const v = inicial[z];
+      if (![v.rojoHasta, v.amarilloHasta, v.verdeHasta].every(x => Number.isInteger(x) && x >= 1 && x <= 200) || !(v.rojoHasta < v.amarilloHasta && v.amarilloHasta < v.verdeHasta)) {
+        aviso(`Criterio de Inicial (${z}): los valores deben ser enteros de 1 a 200 y cada límite mayor que el anterior.`);
+        return;
+      }
+    }
+    await db.collection("config").doc("analisis").set({ tolerancia: tolDef, reglas, inicial, actualizado: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    analisisCfg = { tolerancia: tolDef, reglas, inicial };
+    await registrarHistorial("Análisis", "Parámetros actualizados", "Mínimos y tolerancias por nivel y zona");
+    aviso("Parámetros guardados. La página principal los usará al actualizarse.", true);
+    pintarAdmin();
+  }
   async function cargarPortadaAdm() {
     try {
       const doc = await db.collection("config").doc("portada").get();
@@ -1946,12 +2270,10 @@
         <h3>Logo</h3>
         <div class="grid">
           <label>Logo (enlace de la imagen)<input name="logo" value="${esc(c.logo)}" placeholder="Vacío = logo de la UGEL"></label>
-          <label>Subir logo desde tu computadora<input type="file" id="portadaLogoArchivo" accept="image/*"></label>
         </div>
         <h3>Fondo</h3>
         <div class="grid">
           <label>Imagen de fondo (enlace)<input name="fondo" value="${esc(c.fondo)}" placeholder="Vacío = color sólido"></label>
-          <label>Subir fondo desde tu computadora<input type="file" id="portadaFondoArchivo" accept="image/*"></label>
           <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
           <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
           <label>Color principal<input name="colorPrincipal" type="color" value="${esc(c.colorPrincipal)}"></label>
@@ -1961,6 +2283,7 @@
         <label>Etiqueta superior<input name="eyebrow" value="${esc(c.eyebrow)}"></label>
         <label style="margin-top:10px">Título<input name="titulo" value="${esc(c.titulo)}"></label>
         <label style="margin-top:10px">Subtítulo<textarea name="subtitulo">${esc(c.subtitulo)}</textarea></label>
+        <label style="margin-top:10px">Lema (línea destacada bajo el subtítulo)<input name="lema" value="${esc(c.lema || "")}"></label>
         <h3>Botones</h3>
         <label class="check"><input type="checkbox" name="mostrarBotones" ${c.mostrarBotones ? "checked" : ""} style="width:auto"> Mostrar botones</label>
         <div class="grid" style="margin-top:8px">
@@ -2005,7 +2328,7 @@
       altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
       colorPrincipal: get("colorPrincipal") || "#0f321e",
       colorAcento: get("colorAcento") || "#c8a34b",
-      eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"),
+      eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
       boton2Texto: get("boton2Texto"), boton2Accion: get("boton2Accion"), boton2Url: get("boton2Url"),
       mostrarBotones: !!f.querySelector('input[name="mostrarBotones"]')?.checked
@@ -2182,6 +2505,40 @@
   }
 
   // ---------- Guardado ----------
+  // Lista de anexos del distrito elegido, filtrada por lo escrito. Incluye la opción de agregar si no existe.
+  function pintarListaAnexo(texto) {
+    const cont = document.getElementById("listaAnexos");
+    const sel = document.querySelector('select[name="distrito"]');
+    if (!cont || !sel) return;
+    const d = distritos.find(x => x.clave === sel.value);
+    const todos = d?.anexos || [];
+    const escrito = (texto || "").trim();
+    const q = quitaTildes(escrito);
+    const coinciden = todos.filter(a => !q || quitaTildes(a).includes(q));
+    const exacto = todos.some(a => quitaTildes(a) === q);
+    let html = coinciden.map(a => `<button type="button" class="anexo-op" data-anexo="${esc(a)}">${esc(a)}</button>`).join("");
+    if (escrito && !exacto) html += `<button type="button" class="anexo-op anexo-nuevo" data-a="anexo-agregar">+ Agregar «${esc(escrito)}» a ${esc(d?.nombre || "este distrito")}</button>`;
+    if (!html) html = `<span class="anexo-vacio">Este distrito no tiene anexos. Escribe uno y agrégalo.</span>`;
+    cont.innerHTML = `<div class="anexo-cab"><span>Anexos de ${esc(d?.nombre || "")}</span><button type="button" class="anexo-x" data-cerrar-anexos aria-label="Cerrar lista">×</button></div>` + html;
+    cont.hidden = false;
+  }
+  // Agrega el anexo escrito al distrito elegido en el formulario y lo deja guardado.
+  async function agregarAnexoDistrito() {
+    const campo = document.querySelector('input[name="anexo"]');
+    const sel = document.querySelector('select[name="distrito"]');
+    const nombre = (campo?.value || "").trim().replace(/\s+/g, " ");
+    if (!nombre || !sel) { aviso("Escribe primero el nombre del anexo."); return; }
+    const d = distritos.find(x => x.clave === sel.value);
+    if (!d) { aviso("No se encontró el distrito."); return; }
+    if ((d.anexos || []).some(a => quitaTildes(a) === quitaTildes(nombre))) { aviso("Ese anexo ya existe en " + d.nombre + "."); return; }
+    const nuevos = [...(d.anexos || []), nombre].sort((x, y) => x.localeCompare(y, "es"));
+    await db.collection("distritos").doc(d.clave).set({ clave: d.clave, nombre: d.nombre, anexos: nuevos }, { merge: true });
+    d.anexos = nuevos;
+    const dl = document.getElementById("listaAnexos");
+    if (dl) { dl.hidden = true; dl.innerHTML = ""; }
+    await registrarHistorial("Distrito", "Anexo agregado", `${nombre} (${d.nombre})`);
+    aviso(`Anexo "${nombre}" agregado a ${d.nombre}.`, true);
+  }
   async function guardarDistrito(f) {
     const clave = editando.clave;
     const anterior = distritos.find(d => d.clave === clave);
@@ -2280,6 +2637,7 @@
       jec: !!f.querySelector('input[name="jec"]')?.checked,
       personalPublico: parsePersonal(get("personalPublico")),
       subdirector: get("subdirector"), anexo: get("anexo"), condicion: get("condicion"),
+      fotoAjustes: (() => { try { return JSON.parse(get("fotoAjustes") || "{}"); } catch (e) { return {}; } })(),
       ...(matriculaNueva ? { matriculaPorNivel: matriculaNueva, estudiantes: matriculaNueva.reduce((t, m) => t + (m.matricula || 0), 0) } : {})
     };
     const id = f.dataset.id;
@@ -2437,10 +2795,20 @@
         formSucio = true;
       }
       else if (a === "foto-quitar") quitarFotoPorIndice(Number(b.dataset.i));
+      else if (a === "foto-portada") marcarFotoPortada(Number(b.dataset.i));
+      else if (a === "foto-ajustar") abrirAjusteFoto(Number(b.dataset.i));
+      else if (a === "ajuste-aplicar") aplicarAjusteFoto();
+      else if (a === "ajuste-reset") restablecerAjusteFoto();
+      else if (a === "ajuste-cerrar") { const c = $("ajusteFoto"); if (c) c.hidden = true; }
       else if (a === "ie-exportar") await exportarTodo();
       else if (a === "ie-sugerir-anexo") await sugerirAnexos();
       else if (a === "pers-vis-filtro") await cambiarVisibilidad(filtradosPersonal().map(x => x.id), b.dataset.v === "1");
       else if (a === "pers-limpiar") await limpiarPersonalRepetido();
+      else if (a === "analisis-guardar") await guardarAnalisis();
+      else if (a === "anexo-agregar") await agregarAnexoDistrito();
+      else if (a === "acceso-guardar") await guardarAcceso();
+      else if (a === "acceso-toggle") await cambiarActivoAcceso(b.dataset.id);
+      else if (a === "acceso-quitar") await quitarAcceso(b.dataset.id);
       else if (a === "pers-verificar") await verificarRepetidosPersonal();
       else if (a === "pers-del") await eliminarPersonal(b.dataset.id);
       else if (a === "vista-ie") { vistaIE = b.dataset.v; pintarAdmin(); }
@@ -2485,6 +2853,7 @@
   $("adB").addEventListener("input", e => {
     if (e.target.id === "fBuscar") pintarListaIE();
     if (e.target.id === "pBuscar") pintarPersonal();
+    if (e.target.dataset && e.target.dataset.aj !== undefined) actualizarVistaAjuste();
     if (e.target.matches(".fila-det input[data-h], .fila-det input[data-m]")) recalcularFila(e.target);
     if (e.target.matches("textarea[data-fotos]")) pintarMiniaturas();
     if (e.target.closest("form[data-form]")) formSucio = true;
@@ -2494,20 +2863,32 @@
     if (formSucio) { e.preventDefault(); e.returnValue = ""; }
   });
 
+  $("adB").addEventListener("mousedown", e => { if (e.target.closest(".anexo-lista")) e.preventDefault(); });
+  function cerrarListaAnexos() { const c = document.getElementById("listaAnexos"); if (c) c.hidden = true; }
+  $("adB").addEventListener("click", e => { if (e.target.closest("[data-cerrar-anexos]")) cerrarListaAnexos(); });
+  document.addEventListener("click", e => { if (!e.target.closest(".anexo-combo")) cerrarListaAnexos(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarListaAnexos(); });
+  $("adB").addEventListener("focusin", e => { if (e.target.name === "anexo") pintarListaAnexo(e.target.value); });
+  $("adB").addEventListener("focusout", e => { if (e.target.name === "anexo") setTimeout(() => { const c = document.getElementById("listaAnexos"); if (c) c.hidden = true; }, 180); });
+  $("adB").addEventListener("input", e => { if (e.target.name === "anexo") pintarListaAnexo(e.target.value); });
+  $("adB").addEventListener("click", e => {
+    const op = e.target.closest(".anexo-op[data-anexo]");
+    if (!op) return;
+    const campo = document.querySelector('input[name="anexo"]');
+    if (campo) campo.value = op.dataset.anexo;
+    const c = document.getElementById("listaAnexos"); if (c) c.hidden = true;
+    formSucio = true;
+  });
   $("adB").addEventListener("change", async e => {
-    if (e.target.id === "portadaLogoArchivo" || e.target.id === "portadaFondoArchivo") {
-      const f = e.target.files[0];
-      e.target.value = "";
-      if (!f) return;
-      aviso("Subiendo imagen…", true);
-      try {
-        const url = await subirFoto(f);
-        const campo = document.querySelector(e.target.id === "portadaLogoArchivo" ? 'input[name="logo"]' : 'input[name="fondo"]');
-        if (campo) campo.value = url;
-        aviso("Imagen subida. Guarda la portada para publicarla.", true);
-      } catch (err) {
-        aviso("No se pudo subir la imagen: " + err.message);
-      }
+    if (e.target.name === "anexo") { pintarListaAnexo(e.target.value); formSucio = true; return; }
+    if (e.target.name === "distrito" && e.target.form) {
+      const d = distritos.find(x => x.clave === e.target.value);
+      const anexos = d?.anexos || [];
+      const dl = document.getElementById("listaAnexos");
+      if (dl) { dl.hidden = true; dl.innerHTML = ""; }
+      const campo = e.target.form.querySelector('input[name="anexo"]');
+      if (campo && campo.value && !anexos.includes(campo.value)) campo.value = "";
+      formSucio = true;
       return;
     }
     if (e.target.id === "archivoPersonal") {
@@ -2526,12 +2907,6 @@
         plan = null;
         aviso("No se pudo leer el archivo: " + err.message);
       }
-      return;
-    }
-    if (e.target.id === "fotoArchivo") {
-      const files = e.target.files;
-      if (files && files.length) await subirFotosSeleccionadas(files);
-      e.target.value = "";
       return;
     }
     if (e.target.classList?.contains("chk-ie")) {
@@ -2568,6 +2943,60 @@
 
   cargarTodo();
   cargarPortadaAdm();
+</script>
+<script>
+// Control de acceso: inicio de sesión con Google y rol según la lista "accesos".
+(function () {
+  const OWNER = "luanaprado.0a@gmail.com";
+  const gate = document.getElementById("gateAcceso");
+  const msg = document.getElementById("gateMsg");
+  function bloquearEscrituras() {
+    const negar = () => Promise.reject(new Error("Tu acceso es de visitante: puedes consultar, no modificar."));
+    const DR = firebase.firestore.DocumentReference.prototype;
+    DR.set = negar; DR.update = negar; DR.delete = negar;
+    firebase.firestore.WriteBatch.prototype.commit = negar;
+  }
+  document.getElementById("btnGoogle").addEventListener("click", async () => {
+    msg.textContent = "";
+    if (location.protocol === "file:") {
+      msg.textContent = "Este panel no puede iniciar sesión desde el archivo guardado en tu computadora. Ábrelo desde una dirección web (http://localhost o https://...). Revisa las instrucciones que te envié.";
+      return;
+    }
+    try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch (e) { msg.textContent = "No se pudo iniciar sesión: " + e.message; }
+  });
+  auth.onAuthStateChanged(async user => {
+    if (!user) { rolActual = null; emailActual = null; gate.hidden = false; return; }
+    const email = (user.email || "").toLowerCase();
+    const ref = db.collection("accesos").doc(email);
+    let snap;
+    try {
+      snap = await ref.get();
+      if (!snap.exists && email === OWNER) {
+        await ref.set({ email, rol: "administrador", activo: true, vence: null, actualizado: firebase.firestore.FieldValue.serverTimestamp(), por: email });
+        snap = await ref.get();
+      }
+    } catch (e) {
+      msg.textContent = "No se pudo verificar tu acceso: " + e.message;
+      return;
+    }
+    const d = snap.exists ? snap.data() : null;
+    const vigente = !!d && d.activo === true && (!d.vence || d.vence.toDate() > new Date());
+    if (!vigente) {
+      msg.textContent = "Tu cuenta (" + email + ") no tiene acceso activo. Pide al administrador de accesos que te autorice.";
+      await auth.signOut();
+      gate.hidden = false;
+      return;
+    }
+    rolActual = d.rol;
+    emailActual = email;
+    gate.hidden = true;
+    const btnAcc = document.querySelector('[data-t="accesos"]');
+    if (btnAcc) btnAcc.hidden = rolActual !== "administrador";
+    if (rolActual === "visitante") { bloquearEscrituras(); if (typeof aviso === "function") aviso("Tu acceso es de visitante: puedes consultar, no modificar."); }
+    if (typeof cargarTodo === "function" && typeof pintarAdmin === "function") pintarAdmin();
+  });
+})();
 </script>
 </body>
 </html>

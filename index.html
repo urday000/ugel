@@ -427,6 +427,87 @@
   /* Tabla nominal más alta: se ven más filas sin desplazarse dentro de la tabla */
   .tabla-nominal { max-height:88vh; min-height:60vh; }
   @media(max-width:640px) { .tabla-nominal { max-height:80vh; min-height:50vh; } }
+  .kpi-total { display:inline-grid; gap:6px; min-width:260px; background:linear-gradient(135deg,#e8f6ee,#f3fbf6); border:1px solid var(--border); border-radius:18px; padding:26px 30px; }
+  .kpi-total b { font-size:clamp(2.2rem,4vw,3rem); color:var(--accent); line-height:1; letter-spacing:-.02em; }
+  .kpi-total span { color:var(--muted); font-size:1rem; }
+  .cap { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  .cap-col { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px; }
+  .cap-col h3 { margin:0 0 10px; font-size:.95rem; color:var(--accent-2); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .cap-col h3 b { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:3px 11px; font-size:.95rem; }
+  .cap-fila { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--border); font-size:.95rem; }
+  .cap-fila b { min-width:44px; text-align:center; border:1.5px solid var(--accent); border-radius:6px; padding:3px 8px; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .cap-total { display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:16px 20px; background:var(--accent-soft); border-radius:16px; font-weight:800; color:var(--accent); }
+  .cap-total b { font-size:1.4rem; background:var(--surface); border:2px solid var(--accent); border-radius:8px; padding:4px 16px; }
+  .ficha-ident { display:grid; gap:18px; }
+  .ident-cab { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 18px; border:1px solid var(--border); border-radius:14px; background:#f7faf8; }
+  .ident-cab small, .ident-grid small, .ident-cod > small { display:block; color:var(--muted); font-size:.85rem; margin-bottom:3px; }
+  .ident-cab b { font-size:1.15rem; color:var(--accent); }
+  .ident-detalle { background:#f5d86b; color:#3a2d00; border-radius:999px; padding:6px 14px; font-weight:700; font-size:.85rem; white-space:nowrap; }
+  .ident-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px 22px; }
+  .ident-grid b { font-size:1rem; }
+  .ident-cods { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+  .ident-cod-caja { border:1.5px solid var(--accent); border-radius:12px; padding:12px 14px; display:grid; gap:4px; background:var(--surface); }
+  .ident-cod-caja span { color:var(--muted); font-size:.85rem; }
+  .ident-cod-caja b { color:var(--accent); font-size:1.05rem; font-variant-numeric:tabular-nums; }
+  .rac-nivel { margin:18px 0 10px; color:var(--accent); font-size:1.05rem; }
+  .rac-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .rac-caja { border:1px solid var(--border); border-left:6px solid #94a3b8; border-radius:14px; padding:12px 14px; background:var(--surface); display:grid; gap:8px; }
+  .rac-caja.cumple { border-left-color:#16a34a; background:#f0fdf4; }
+  .rac-caja.no-cumple { border-left-color:#dc2626; background:#fef2f2; }
+  .rac-cab { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .rac-cab b { color:var(--accent); }
+  .rac-cab span { color:var(--muted); font-size:.85rem; }
+  .rac-datos { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.9rem; color:var(--muted); }
+  .rac-datos b { color:var(--text); }
+  .rac-estado { font-size:.9rem; font-weight:700; }
+  .rac-caja.cumple .rac-estado { color:#15803d; }
+  .rac-caja.no-cumple .rac-estado { color:#b91c1c; }
+  .rac-caja.revision { border-left-color:#f59e0b; background:#fffbeb; }
+  .rac-caja.revision .rac-estado { color:#b45309; }
+  .rac-condiciones { background:#f7faf8; border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin:12px 0 16px; font-size:.92rem; }
+  .rac-condiciones b:first-child { color:var(--accent); }
+  .rac-condiciones ul { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:6px; }
+  .rac-condiciones li { display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--muted); }
+  .rac-condiciones li b { color:var(--text); }
+  .punto { display:inline-block; width:12px; height:12px; border-radius:50%; flex:0 0 12px; }
+  .punto.verde { background:#16a34a; }
+  .punto.amarillo { background:#f59e0b; }
+  .punto.rojo { background:#dc2626; }
+  .punto.gris { background:#94a3b8; }
+  .rac-sug { font-size:.85rem; color:#92400e; background:#fef3c7; border-radius:8px; padding:6px 8px; }
+  .ie-panel { position:relative; border-radius:24px; overflow:hidden; min-height:300px; background:#0f321e center/cover no-repeat; color:#fff; margin-bottom:16px; }
+  .ie-panel-velo { position:absolute; inset:0; background:linear-gradient(90deg,rgba(7,30,18,.92) 0%,rgba(7,30,18,.6) 55%,rgba(7,30,18,.2) 100%); }
+  .ie-panel-contenido { position:relative; padding:clamp(22px,4vw,40px); display:grid; gap:10px; max-width:900px; }
+  .ie-panel-tag { justify-self:start; background:#f5d86b; color:#3a2d00; border-radius:999px; padding:6px 14px; font-weight:700; font-size:.85rem; }
+  .ie-panel h1 { color:#fff; margin:0; font-size:clamp(1.6rem,3.6vw,2.6rem); letter-spacing:-.02em; line-height:1.1; }
+  .ie-panel p { color:#e2eee5; margin:0; }
+  .ie-panel-datos { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+  .ie-panel-datos span { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); border-radius:12px; padding:10px 14px; display:grid; gap:2px; min-width:130px; }
+  .ie-panel-datos small { color:#cfe3d6; font-size:.8rem; }
+  .ie-panel-datos b { color:#fff; font-size:1rem; }
+  button.ident-cod-caja { font:inherit; text-align:left; cursor:pointer; background:var(--surface); }
+  button.ident-cod-caja small { color:var(--accent); font-weight:700; font-size:.82rem; }
+  .rac-barra { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:6px 0 10px; }
+  .rac-tol { display:flex; gap:8px; align-items:center; font-size:.92rem; color:var(--muted); }
+  .rac-tol input { width:90px; padding:7px 9px; border-radius:8px; border:1px solid var(--border); font:inherit; }
+  .rac-param span { margin-right:14px; }
+  .rac-caja.verde { border-left-color:#16a34a; background:#f0fdf4; }
+  .rac-caja.amarillo { border-left-color:#f59e0b; background:#fffbeb; }
+  .rac-caja.rojo { border-left-color:#dc2626; background:#fef2f2; }
+  .rac-caja.gris { border-left-color:#94a3b8; background:#f8fafc; }
+  .rac-color { font-weight:800; }
+  .rac-caja.verde .rac-color { color:#15803d; }
+  .rac-caja.amarillo .rac-color { color:#b45309; }
+  .rac-caja.rojo .rac-color { color:#b91c1c; }
+  .rac-caja.gris .rac-color { color:#475569; }
+  .rac-alcance { font-size:.9rem; color:var(--muted); }
+  .rac-resumen { margin-top:18px; border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+  .rac-pill { display:inline-block; border-radius:999px; padding:4px 10px; font-weight:700; font-size:.85rem; margin:0 4px; }
+  .rac-pill.verde { background:#dcfce7; color:#166534; }
+  .rac-pill.amarillo { background:#fef3c7; color:#92400e; }
+  .rac-pill.rojo { background:#fee2e2; color:#991b1b; }
+  .rac-pill.gris { background:#e2e8f0; color:#334155; }
+  .rac-resumen ul { margin:10px 0 0; padding-left:18px; display:grid; gap:4px; font-size:.92rem; }
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
   /* Estilo inspirado en la página de hospedaje: verde profundo, dorado y crema */
@@ -597,6 +678,14 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   .tabla-p th:first-child, .tabla-p td:first-child { width:34%; }
   .tabla-p th.num, .tabla-p td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .tabla-p th.num, .tabla-p td.num { padding-right:14px; }
+
+.ux-table-help{ display:flex; align-items:center; gap:7px; color:#506a5b; font-size:.82rem; margin:8px 0; }
+.ux-backtop{ position:fixed; right:18px; bottom:18px; z-index:90; width:46px; height:46px; border:1px solid #c9e3d4; border-radius:50%; background:#fff; color:#0b5c3a; box-shadow:0 6px 24px #0d362333; cursor:pointer; font-size:1.3rem; opacity:0; pointer-events:none; transform:translateY(12px); transition:.2s ease; }
+.ux-backtop.visible{ opacity:1; pointer-events:auto; transform:translateY(0); }
+.ux-backtop{transition:none!important}
+  .rac-prom { font-size:.9rem; color:var(--muted); }
+  .rac-prom b { color:var(--text); }
+  .lema-portada { margin:12px 0 0; font-weight:800; letter-spacing:.01em; color:#f5d86b; font-size:clamp(1rem,1.6vw,1.2rem); }
 </style>
 </head>
 <body>
@@ -647,14 +736,22 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
 
   // Orden de los distritos y datos de respaldo (si Firestore no responde).
   const DISTRITOS_BASE = [
-    { clave:"Aplao", nombre:"Aplao", capital:"Aplao (capital provincial)", anexos:["Querulpa","La Real","Cochate","Caspani","Casquina","Cosos","El Monte","La Central","Nueva Central","Acoy","Andamayo","Ongoro"] },
-    { clave:"Andagua", nombre:"Andagua", capital:"", anexos:[] }, { clave:"Ayo", nombre:"Ayo", capital:"", anexos:[] },
-    { clave:"Chachas", nombre:"Chachas", capital:"", anexos:[] }, { clave:"Chilcaymarca", nombre:"Chilcaymarca", capital:"", anexos:[] },
-    { clave:"Choco", nombre:"Choco", capital:"", anexos:[] }, { clave:"Huancarqui", nombre:"Huancarqui", capital:"", anexos:[] },
-    { clave:"Machaguay", nombre:"Machaguay", capital:"", anexos:[] }, { clave:"Orcopampa", nombre:"Orcopampa", capital:"", anexos:[] },
-    { clave:"Pampacolca", nombre:"Pampacolca", capital:"", anexos:[] }, { clave:"Tipán", nombre:"Tipán", capital:"", anexos:[] },
-    { clave:"Uñón", nombre:"Uñón", capital:"", anexos:[] }, { clave:"Uraca", nombre:"Uraca", capital:"", anexos:[] },
-    { clave:"Viraco", nombre:"Viraco", capital:"", anexos:[] }
+    // Catálogo de anexos y localidades tomado del Excel "IE de Castilla con distrito y anexo.xlsx".
+    // Se conservan las denominaciones tal como aparecen en la fuente, incluidas sus variantes.
+    { clave:"Aplao", nombre:"Aplao", capital:"Aplao (capital provincial)", anexos:["Acoy","Aplao","Caspani","Casquina","Cochate","Cosos","Fundo El Castillo","Hacienda Andamayo","Hacienda La Central","Hacienda La Real","Hacienda Querulpa Chico","La Barranca","La Real","Mamas","Ongoro","San Jose De Huatiapilla","Querulpa","El Monte","Nueva Central","Andamayo","La Central"] },
+    { clave:"Andagua", nombre:"Andagua", capital:"", anexos:["Andagua","Andahua","Jallua / Callhuas","Orahuasto","San Antonio","Soporo"] },
+    { clave:"Ayo", nombre:"Ayo", capital:"", anexos:["Ayo","Subna"] },
+    { clave:"Chachas", nombre:"Chachas", capital:"", anexos:["Chachas","Checotaña","Huaracopalca","Huaracopallca","Huaytapalca","Nahuira","Tolcone / Capilla","Tolconi"] },
+    { clave:"Chilcaymarca", nombre:"Chilcaymarca", capital:"", anexos:["Chapacoco","Chilcaimarca","Chilcaymarca"] },
+    { clave:"Choco", nombre:"Choco", capital:"", anexos:["Choco","Hujuyo","Llanca","Miña","Ojuyo","Pachauma","Pampuyo","Sihuincha"] },
+    { clave:"Huancarqui", nombre:"Huancarqui", capital:"", anexos:["Huancarqui"] },
+    { clave:"Machaguay", nombre:"Machaguay", capital:"", anexos:["Acopallpa","Cotanay","Machaguay","Vista Alegre"] },
+    { clave:"Orcopampa", nombre:"Orcopampa", capital:"", anexos:["Condorhuaycco","Huancarama","La Laguna","Misahuanca","Orcopampa","Rumihuasi","Sarpane","Tintaymarca","Vista Alegre"] },
+    { clave:"Pampacolca", nombre:"Pampacolca", capital:"", anexos:["Pampacolca","Piscopampa","Quiscata","San Antonio","Tuhuallqui"] },
+    { clave:"Tipán", nombre:"Tipán", capital:"", anexos:["Chupacra","Tagre","Tipan","Yacmes"] },
+    { clave:"Uñón", nombre:"Uñón", capital:"", anexos:["Piraucho","Uñon"] },
+    { clave:"Uraca", nombre:"Uraca", capital:"", anexos:["Corire","El Dique","Escalerillas","Goyeneche","Hacienda Cantas","Hacienda Goyeneche","Hacienda Toran","La Candelaria","Mesana","Pedregal","Punta Colorada","Sahuani","Sarcas","Satelite Salvador","Torete","Uracra"] },
+    { clave:"Viraco", nombre:"Viraco", capital:"", anexos:["Arejocha","Costuro","Huami","Pampachacra","Rituy","Unro","Viraco","Yaso"] }
   ];
   const RESPALDO = [
     { distrito:"Aplao", nombre:"Colegio Nacional Libertador Castilla de Aplao", tipo:"Instituto de secundaria", direccion:"Av. 21 de Marzo 109, Aplao" },
@@ -676,7 +773,10 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   let personalVisible = [];
 
   // Pila de vistas: home, distrito o ficha. Todo ocurre en esta misma pestaña.
-  const estado = { pila: [{ tipo:"home" }], q: "", foto: 0 };
+  const estado = { pila: [{ tipo:"home" }], q: "", foto: 0, racNivel: null, tolerancia: 4 };
+  // Parámetros definidos por la UGEL en el panel (pestaña Análisis).
+  let reglasCfg = {};
+  let inicialCfg = null;
 
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const cssUrl = u => String(u ?? "").replace(/'/g, "%27");
@@ -690,6 +790,21 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   }
 
   // Tarjeta resumida: datos clave en orden fijo. La ficha muestra todo lo guardado.
+  // Ajuste de posición y tamaño guardado para cada foto (por dirección de la imagen).
+  function ajusteFoto(ie, url) {
+    return (ie && ie.fotoAjustes && ie.fotoAjustes[url]) || { x: 50, y: 50, z: 100 };
+  }
+  // Modalidad según el nivel educativo de la plaza: EBR, EBA, EBE, ETP o UGEL.
+  function modalidadDe(nivel) {
+    const u = sinTildes(nivel || "");
+    if (!u) return "—";
+    if (u.includes("alternativa")) return "EBA";
+    if (u.includes("especial")) return "EBE";
+    if (u.includes("tecnico") || u.includes("productiva")) return "ETP";
+    if (u.includes("inicial") || u.includes("primaria") || u.includes("secundaria")) return "EBR";
+    if (u.includes("administracion")) return "UGEL";
+    return "—";
+  }
   // Orden fijo de los niveles: Inicial, Primaria, Secundaria y después los demás.
   function ordenNivel(n) {
     const u = sinTildes(n || "");
@@ -713,7 +828,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       ["Subdirector", ie.subdirector !== "No hay" ? ie.subdirector : null]
     ].filter(([, v]) => v !== undefined && v !== null && v !== "");
     return `<button type="button" class="card ie-card" data-ie="${i}">
-      <div class="ie-img" style="background-image:url('${cssUrl(portada)}')">${portada ? "" : "Sin foto"}</div>
+      <div class="ie-img" style="background-image:url('${cssUrl(portada)}');background-position:${ajusteFoto(ie, portada).x}% ${ajusteFoto(ie, portada).y}%;background-size:${ajusteFoto(ie, portada).z}% auto">${portada ? "" : "Sin foto"}</div>
       <div class="ie-info">
         <h2>${esc(ie.nombre)}</h2>
         ${filas.map(([k, v]) => `<div class="meta"><b>${esc(k)}:</b> ${esc(v)}</div>`).join("")}
@@ -823,7 +938,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     const f = fotos.length ? Math.min(estado.foto, fotos.length - 1) : 0;
     const carrusel = fotos.length
       ? `<div class="car">
-           <img src="${esc(fotos[f])}" alt="${esc(ie.nombre)} foto ${f + 1}" onerror="this.style.display='none'">
+           <img src="${esc(fotos[f])}" alt="${esc(ie.nombre)} foto ${f + 1}" style="object-position:${ajusteFoto(ie, fotos[f]).x}% ${ajusteFoto(ie, fotos[f]).y}%;transform:scale(${ajusteFoto(ie, fotos[f]).z / 100});transform-origin:${ajusteFoto(ie, fotos[f]).x}% ${ajusteFoto(ie, fotos[f]).y}%" onerror="this.style.display='none'">
            ${fotos.length > 1 ? `<button class="prev" type="button" data-foto="${(f - 1 + fotos.length) % fotos.length}" aria-label="Anterior">‹</button>
              <button class="next" type="button" data-foto="${(f + 1) % fotos.length}" aria-label="Siguiente">›</button>
              <div class="cnt">${f + 1} / ${fotos.length}</div>` : ""}
@@ -856,8 +971,8 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     const visiblesIE = personalVisible.filter(x => (ie.claveUGEL && x.claveUGEL === ie.claveUGEL) ||
       (x.distrito === ie.distrito && nomCore(x.institucion) && nomCore(x.institucion) === nomCore(ie.nombre)));
     const filasNominal = visiblesIE.map(x => {
-      const txt = sinTildes([x.codigoPlaza, x.codigoPersona, x.nombreCompleto, x.cargo, x.situacionLaboral, x.jornada, x.categoria, x.regimen, x.tipoRegistro].join(" "));
-      return `<tr data-txt="${esc(txt)}" data-cat="${esc(String(x.categoria || "").trim())}"><td>${esc(x.codigoPlaza)}</td><td>${esc(x.codigoPersona)}</td><td>${esc(x.nombreCompleto)}</td><td>${esc(x.cargo)}</td><td>${esc(x.situacionLaboral)}</td><td>${esc(x.jornada)}</td><td>${esc(x.categoria)}</td><td>${esc(x.regimen)}</td><td>${esc(x.tipoRegistro)}</td></tr>`;
+      const txt = sinTildes([x.codigoPlaza, x.codigoPersona, x.nombreCompleto, x.cargo, x.nivelEducativo, modalidadDe(x.nivelEducativo), x.situacionLaboral, x.jornada, x.categoria, x.regimen, x.tipoRegistro].join(" "));
+      return `<tr data-txt="${esc(txt)}" data-cat="${esc(String(x.categoria || "").trim())}"><td>${esc(x.codigoPlaza)}</td><td>${esc(x.codigoPersona)}</td><td>${esc(x.nombreCompleto)}</td><td>${esc(x.cargo)}</td><td>${esc(x.nivelEducativo || "—")}</td><td><b>${esc(modalidadDe(x.nivelEducativo))}</b></td><td>${esc(x.situacionLaboral)}</td><td>${esc(x.jornada)}</td><td>${esc(x.categoria)}</td><td>${esc(x.regimen)}</td><td>${esc(x.tipoRegistro)}</td></tr>`;
     }).join("");
     const tipoDe = x => sinTildes(x.tipoTrabajador || "");
     const resumenNominal = {
@@ -873,7 +988,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         <select class="nominal-cat" data-nominal-cat aria-label="Filtrar por categoría"><option value="">Todas las categorías</option>${catsNominal.map(c => `<option value="${esc(c)}">Categoría ${esc(c)}</option>`).join("")}</select>
         <span class="nominal-conteo" id="nominalConteo">${resumenNominal.registros} registros · ${resumenNominal.docentes} docentes · ${resumenNominal.administrativos} administrativos · ${resumenNominal.cas} CAS · ${resumenNominal.personas} personas distintas</span>
       </div>
-      <div class="tabla-nominal"><table><thead><tr><th>Código de plaza</th><th>Código personal</th><th>Apellidos y nombres</th><th>Cargo</th><th>Situación</th><th>Jornada</th><th>Categoría</th><th>Régimen</th><th>Tipo de registro</th></tr></thead>
+      <div class="tabla-nominal"><table><thead><tr><th>Código de plaza</th><th>Código personal</th><th>Apellidos y nombres</th><th>Cargo</th><th>Nivel educativo</th><th>Modalidad</th><th>Situación</th><th>Jornada</th><th>Categoría</th><th>Régimen</th><th>Tipo de registro</th></tr></thead>
       <tbody>${filasNominal}</tbody></table></div>` : "";
     const matr = [...(ie.matriculaPorNivel || [])].sort((a, b) => ordenNivel(a.nivel) - ordenNivel(b.nivel));
     const matriculaHtml = matr.length ? `<h2 class="sec">Matrícula</h2>
@@ -905,6 +1020,190 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         return items.map((c, i) => `<tr>${i === 0 ? `<td rowspan="${items.length}"><b>${esc(g)}</b><br><span class="cant-g">${tot}</span></td>` : ""}<td>${esc(c.cargo)}</td><td class="num">${esc(c.cantidad)}</td><td>${c.situacion ? chips(c.situacion) : ""}</td></tr>`).join("");
       }).join("")}
       </tbody></table></div>` : "";
+    const docentesTotal = (ie.docentes !== undefined && ie.docentes !== null && ie.docentes !== "")
+      ? ie.docentes
+      : visiblesIE.filter(x => /docen/.test(sinTildes(x.tipoTrabajador || ""))).length;
+    // Código modular que corresponde a cada nivel (Inicial, Primaria o Secundaria).
+    function codModPorNivel(ie, nombre) {
+      const m = (ie.matriculaPorNivel || []).find(x => sinTildes(x.nivel || "").includes(nombre.toLowerCase()));
+      return m && m.codigo ? m.codigo : "—";
+    }
+    // Mínimos de estudiantes por sección (RVM 071-2024, Educación Básica Regular).
+    // null = la tabla no aplica en esa zona.
+    const MINIMOS_RVM071 = [
+      { id: "inicial-unidocente", nivel: "inicial", tipo: /unidocente/, urbana: null, rural: 15 },
+      { id: "inicial-polidocente", nivel: "inicial", tipo: /polidocente/, urbana: 25, rural: 20 },
+      { id: "primaria-unidocente", nivel: "primaria", tipo: /unidocente/, urbana: null, rural: 15 },
+      { id: "primaria-multigrado", nivel: "primaria", tipo: /multigrado/, urbana: 25, rural: 20 },
+      { id: "primaria-polidocente", nivel: "primaria", tipo: /polidocente/, urbana: 30, rural: 25 },
+      { id: "secundaria-polidocente", nivel: "secundaria", tipo: /polidocente/, urbana: 30, rural: 25 }
+    ];
+
+    function analisisRacionalizacion(ie) {
+      const zona = sinTildes(ie.zona || "");
+      const esRural = zona.includes("rural");
+      const esUrbana = zona.includes("urban");
+      const tipoIE = sinTildes(ie.tipoIE || "");
+      const minPara = r => { const c = reglasCfg[r.id] || {}; return esRural ? ("minR" in c ? c.minR : r.rural) : ("minU" in c ? c.minU : r.urbana); };
+      // Criterio temporal de Inicial: rangos sobre el total del nivel (ejemplo de la UGEL).
+      const rangosInicial = () => {
+        const z = esRural ? "rural" : "urbana";
+        const base = esRural ? { rojoHasta: 25, amarilloHasta: 44, verdeHasta: 50 } : { rojoHasta: 30, amarilloHasta: 44, verdeHasta: 50 };
+        return { ...base, ...((inicialCfg && inicialCfg[z]) || {}) };
+      };
+      const inicialBloque = m => {
+        const c = rangosInicial();
+        const tot = Number(m.matricula) || 0;
+        const sec = Number(m.secciones) || 0;
+        const amarilloDesde = c.rojoHasta + 1;
+        const verdeDesde = c.amarilloHasta + 1;
+        let color, etiqueta, alcance = "";
+        if (!esRural && !esUrbana) { color = "gris"; etiqueta = "Gris: falta la zona"; }
+        else if (tot > c.verdeHasta) { color = "amarillo"; etiqueta = "Desdoblar secciones"; alcance = `más de ${c.verdeHasta} estudiantes`; }
+        else if (tot >= verdeDesde) { color = "verde"; etiqueta = "Verde: cumple"; }
+        else if (tot >= amarilloDesde) { color = "amarillo"; etiqueta = "Amarillo: necesita revisión"; alcance = `${amarilloDesde}–${c.amarilloHasta} estudiantes`; }
+        else { color = "rojo"; etiqueta = "Rojo: no cumple"; alcance = `hasta ${c.rojoHasta} estudiantes`; }
+        cuenta[color]++;
+        resumenGrados.push({ nivel: m.nivel, grado: "Total del nivel", color, alcance });
+        return `<h3 class="rac-nivel">${esc(m.nivel)} · código ${esc(m.codigo || "—")} · criterio temporal</h3>
+          <div class="rac-grid"><div class="rac-caja ${color}">
+            <div class="rac-cab"><b>Total del nivel</b><span>${sec} sec. · ${tot} est.</span></div>
+            <div class="rac-color">${esc(etiqueta)}</div>
+            ${alcance ? `<div class="rac-alcance">${esc(alcance)}</div>` : ""}
+            <div class="rac-sug">Rojo hasta ${c.rojoHasta} · Amarillo ${amarilloDesde}–${c.amarilloHasta} · Verde ${verdeDesde}–${c.verdeHasta} · Más de ${c.verdeHasta}: desdoblar.</div>
+          </div></div>`;
+      };
+      const tolPara = r => { if (!r) return estado.tolerancia; const c = reglasCfg[r.id] || {}; const v = esRural ? c.tolR : c.tolU; return typeof v === "number" ? v : estado.tolerancia; };
+      const tol = Math.max(0, Math.min(10, Number(estado.tolerancia) || 0));
+      const todos = [...(ie.matriculaPorNivel || [])].sort((x, y) => ordenNivel(x.nivel) - ordenNivel(y.nivel));
+      const filtro = estado.racNivel ? sinTildes(estado.racNivel) : "";
+      const niveles = filtro ? todos.filter(m => sinTildes(m.nivel || "").includes(filtro)) : todos;
+      const parametros = todos.map(m => {
+        const nv = sinTildes(m.nivel || "");
+        const clave = nv.includes("inicial") ? "inicial" : nv.includes("primaria") ? "primaria" : nv.includes("secundaria") ? "secundaria" : null;
+        const regla = clave && tipoIE ? MINIMOS_RVM071.find(r => r.nivel === clave && r.tipo.test(tipoIE)) : null;
+        const minimo = regla ? minPara(regla) : null;
+        if (clave === "inicial") return `<span><b>${esc(m.nivel)}:</b> criterio temporal (total del nivel)</span>`;
+        return `<span><b>${esc(m.nivel)}:</b> ${minimo == null ? "sin dato" : minimo + " por sección"}</span>`;
+      }).join("");
+      const cabeza = `<div class="rac-barra">
+          <span class="rac-tol">Tolerancia de flexibilidad: <b>${tol}</b> estudiantes (definida por la UGEL)</span>
+          ${filtro ? `<button type="button" class="mini" data-rac-todos="1">Ver todos los niveles</button>` : ""}
+        </div>
+        <p class="nota rac-param">Mínimo por sección: ${parametros}</p>`;
+      if (!niveles.length) return `${cabeza}<p class="vacio">Sin datos de matrícula para analizar.</p>`;
+      const cuenta = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+      const resumenGrados = [];
+      const bloques = niveles.map(m => {
+        const nv = sinTildes(m.nivel || "");
+        const clave = nv.includes("inicial") ? "inicial" : nv.includes("primaria") ? "primaria" : nv.includes("secundaria") ? "secundaria" : null;
+        const regla = clave && tipoIE ? MINIMOS_RVM071.find(r => r.nivel === clave && r.tipo.test(tipoIE)) : null;
+        const minimo = regla ? minPara(regla) : null;
+        if (clave === "inicial") return inicialBloque(m);
+        const grados = (m.detalle || []).filter(g => (Number(g.total) || 0) || (Number(g.secciones) || 0));
+        const tarjetas = grados.map(g => {
+          const sec = Number(g.secciones) || 0;
+          const tot = Number(g.total) || 0;
+          const tol = tolPara(regla);
+          let color, etiqueta, alcance = "", sugerencia = "";
+          if (!tipoIE) { color = "gris"; etiqueta = "Gris: falta el tipo de IE"; }
+          else if (!regla) { color = "gris"; etiqueta = "Gris: sin parámetro para este nivel"; }
+          else if (!esRural && !esUrbana) { color = "gris"; etiqueta = "Gris: falta la zona"; }
+          else if (minimo === null) { color = "gris"; etiqueta = "Gris: la tabla no aplica en zona urbana"; }
+          else if (!sec) { color = "gris"; etiqueta = "Gris: falta el número de secciones"; }
+          else {
+            const dif = minimo * sec - tot;
+            if (dif === 0) { color = "verde"; etiqueta = "Verde: cumple"; }
+            else if (dif < 0) {
+              color = "amarillo"; etiqueta = "Amarillo: excede"; alcance = `sobran ${-dif}`;
+              const cn = tot / minimo;
+              if (Math.round(cn * 10) % 10 >= 5) sugerencia = `Sugerencia: aumentar de ${sec} a ${Math.ceil(cn)} secciones (${tot} ÷ ${minimo} = ${cn.toFixed(1).replace(".", ",")}, redondeado hacia arriba).`;
+            }
+            else if (dif <= tol) { color = "amarillo"; etiqueta = "Amarillo: necesita revisión"; alcance = `faltan ${dif}`; }
+            else {
+              // Un grado con una sola sección que no cumple queda en amarillo: no hay otra sección que ajustar.
+              if (sec === 1) { color = "amarillo"; etiqueta = "Amarillo: una sección, no alcanza"; alcance = `faltan ${dif}`; }
+              else { color = "rojo"; etiqueta = "Rojo: no cumple"; alcance = `faltan ${dif}`; }
+              for (let s2 = sec - 1; s2 >= 1; s2--) {
+                const d2 = minimo * s2 - tot;
+                if (d2 === 0) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: cumple exactamente.`; break; }
+                if (d2 >= 1 && d2 <= tol) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: quedaría en amarillo (faltarían ${d2}).`; break; }
+                if (d2 <= -1 && d2 >= -tol) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: quedaría en amarillo (excedería ${-d2}).`; break; }
+              }
+            }
+          }
+          cuenta[color]++;
+          resumenGrados.push({ nivel: m.nivel, grado: g.grado, color, alcance });
+          return `<div class="rac-caja ${color}">
+            <div class="rac-cab"><b>${esc(g.grado)}</b><span>${sec} sec. · ${tot} est.</span></div>
+            <div class="rac-color">${esc(etiqueta)}</div>
+            ${alcance ? `<div class="rac-alcance">${esc(alcance)}</div>` : ""}
+            ${sec > 1 ? `<div class="rac-prom">Promedio por sección: <b>${(tot / sec).toFixed(1).replace(".", ",")}</b></div>` : ""}
+            ${sugerencia ? `<div class="rac-sug">${esc(sugerencia)}</div>` : ""}
+          </div>`;
+        }).join("");
+        return `<h3 class="rac-nivel">${esc(m.nivel)} · código ${esc(m.codigo || "—")}</h3>
+          ${tarjetas ? `<div class="rac-grid">${tarjetas}</div>` : `<p class="vacio">Sin detalle por grado para este nivel.</p>`}`;
+      }).join("");
+      return `${cabeza}
+        ${bloques}
+        <div class="rac-resumen">
+          <b>Resumen de ${filtro ? esc(estado.racNivel) : "todos los niveles"}:</b>
+          <span class="rac-pill verde">Verde ${cuenta.verde}</span>
+          <span class="rac-pill amarillo">Amarillo ${cuenta.amarillo}</span>
+          <span class="rac-pill rojo">Rojo ${cuenta.rojo}</span>
+          <span class="rac-pill gris">Gris ${cuenta.gris}</span>
+          <ul>${resumenGrados.map(r => `<li><b>${esc(r.grado)}</b> (${esc(r.nivel)}): ${esc(r.color)}${r.alcance ? " · " + esc(r.alcance) : ""}</li>`).join("")}</ul>
+        </div>
+        <p class="nota">Referencia: RVM 071-2024 (EBR). Verde: diferencia 0. Amarillo: sobran estudiantes, o faltan hasta la tolerancia (${tol}). Rojo: faltan más de ${tol}. Un grado con una sola sección que no alcanza queda en amarillo. Gris: falta un dato. La tolerancia la define la UGEL; puedes cambiarla arriba.</p>`;
+    }
+    // Estructura del CAP de la propuesta: cuatro grupos y total de personal.
+    const CAP_GRUPOS = [
+      { titulo: "Total jerárquico", filas: [
+        { l: "Director", t: u => /director/.test(u) && !/sub/.test(u) },
+        { l: "Sub-director", t: u => /sub.?director/.test(u) },
+        { l: "Coord. Pedagógico", t: u => /coord.*pedag/.test(u) } ] },
+      { titulo: "Total docente", filas: [
+        { l: "Profesor", t: u => /^profesor$/.test(u.trim()) },
+        { l: "Profesor AIP", t: u => /profesor.*aip/.test(u) },
+        { l: "Profesor Educ. Física", t: u => /profesor.*fisica/.test(u) },
+        { l: "Auxiliar Educación", t: u => /auxiliar.*educacion/.test(u) } ] },
+      { titulo: "Total administrativo", filas: [
+        { l: "Secretaria", t: u => /secretar/.test(u) },
+        { l: "Oficinista", t: u => /oficinista/.test(u) },
+        { l: "Aux. biblioteca", t: u => /biblioteca/.test(u) },
+        { l: "Aux. Laboratorio", t: u => /laboratorio/.test(u) },
+        { l: "TSII", t: u => /servicio ii\b/.test(u) },
+        { l: "TSIII", t: u => /servicio iii/.test(u) } ] },
+      { titulo: "Total CAS", filas: [
+        { l: "Soporte Tecnológico", t: u => /soporte|innovacion/.test(u) },
+        { l: "Psicólogo", t: u => /psicolog/.test(u) },
+        { l: "Especialista EBE", t: u => /especialista/.test(u) },
+        { l: "Profesional SAANEE", t: u => /saanee|profesional/.test(u) },
+        { l: "Mantenimiento", t: u => /mantenimiento/.test(u) },
+        { l: "Vigilancia", t: u => /vigilancia/.test(u) } ] }
+    ];
+    const capCargos = (ie.personalPublico || []);
+    const capCuenta = new Map();
+    let capOtros = 0;
+    capCargos.forEach(c => {
+      const u = sinTildes(c.cargo || "");
+      const n = Number(c.cantidad) || 0;
+      let hallado = false;
+      CAP_GRUPOS.forEach(g => g.filas.forEach(f => { if (!hallado && f.t(u)) { capCuenta.set(f.l, (capCuenta.get(f.l) || 0) + n); hallado = true; } }));
+      if (!hallado) capOtros += n;
+    });
+    const capTotalPersonal = capCargos.reduce((tt, c) => tt + (Number(c.cantidad) || 0), 0);
+    const capHtml = capCargos.length ? `<div class="cap">
+        ${CAP_GRUPOS.map(g => {
+          const tot = g.filas.reduce((tt, f) => tt + (capCuenta.get(f.l) || 0), 0);
+          return `<div class="cap-col"><h3>${esc(g.titulo)} <b>${tot}</b></h3>
+            ${g.filas.map(f => `<div class="cap-fila"><span>${esc(f.l)}</span><b>${capCuenta.get(f.l) || 0}</b></div>`).join("")}</div>`;
+        }).join("")}
+      </div>
+      ${capOtros ? `<p class="nota">Otros cargos no clasificados: ${capOtros}</p>` : ""}
+      <div class="cap-total"><span>TOTAL PERSONAL</span><b>${capTotalPersonal}</b></div>` : `<p class="vacio">Sin datos de personal para esta IE.</p>`;
+    const cajaDocentes = `<div class="kpi-total"><b>${esc(docentesTotal)}</b><span>Total de docentes</span></div>`;
     const bloquePersonal = `
       <h2 class="sec">Personal</h2>
       <dl class="datos">
@@ -922,10 +1221,23 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     return `
       <button type="button" class="volver" data-volver>← Volver</button>
       <article class="ficha">
+        <section class="ie-panel" style="background-image:url('${cssUrl(portada)}')">
+          <div class="ie-panel-velo"></div>
+          <div class="ie-panel-contenido">
+            <span class="ie-panel-tag">${esc(ie.tipo || ie.nivel || "Institución educativa")}</span>
+            <h1>${esc(ie.nombre)}</h1>
+            <p>${esc(sub)}</p>
+            <div class="ie-panel-datos">
+              <span><small>Código modular</small><b>${esc((ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" · ") || (ie.codigosModulares || [ie.codigo]).filter(Boolean).join(" · ") || "—")}</b></span>
+              <span><small>Director</small><b>${esc(ie.director || "Por registrar")}</b></span>
+              <span><small>Estudiantes</small><b>${esc(ie.estudiantes ?? "—")}</b></span>
+              <span><small>Zona</small><b>${esc(ie.zona || "—")}</b></span>
+              <span><small>Gestión</small><b>${esc(ie.gestion || "—")}</b></span>
+            </div>
+          </div>
+        </section>
         ${carrusel}
         <div class="cuerpo">
-          <h1 class="titulo">${esc(ie.nombre)}</h1>
-          <p class="sub">${esc(sub)}</p>
           <div class="cuadros-barra">
             <button type="button" data-cnav="-1" aria-label="Sección anterior">‹</button>
             <nav class="cuadros-tabs" aria-label="Secciones de la institución">
@@ -941,14 +1253,30 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
             <div class="cuadros" id="cuadros">
               <section class="cuadro">
                 <span class="cuadro-num">1</span><h2 class="cuadro-titulo">Identificación</h2>
-                ${seccion("Identificación", [["Tipo de I.E.", ie.tipoIE], ["Tipo de institución", ie.tipo], ["Códigos modulares", (ie.codigosModulares || [ie.codigo]).filter(Boolean).join(" · ")], ["N° de IE", ie.nroIE], ["Condición", ie.condicion]])}
-                ${seccion("Ubicación", [["Distrito", ie.distrito], ["Dirección", ie.direccion], ["Zona", ie.zona], ["Frontera", si(ie.frontera)], ["Latitud", ie.latitud], ["Longitud", ie.longitud], ["Altitud (msnm)", ie.altitud]])}
-                ${seccion("Servicio", [["Gestión", ie.gestion], ["JEC", si(ie.jec)], ["Estudiantes", ie.estudiantes]])}
+                <div class="ficha-ident">
+                  <div class="ident-cab">
+                    <div><small>Nombre de la institución</small><b>${esc(ie.nombre)}</b></div>
+                    <span class="ident-detalle">${esc(ie.tipo || ie.nivel || "")}</span>
+                  </div>
+                  <div class="ident-grid">
+                    <div><small>Director</small><b>${esc(ie.director || "Por registrar")}</b></div>
+                    <div><small>Ubicación</small><b>${esc([ie.distrito, ie.direccion].filter(Boolean).join(" · ") || "—")}</b></div>
+                    <div><small>Tipo de I.E.</small><b>${esc(ie.tipoIE || "—")}</b></div>
+                    <div><small>Condición de la I.E.</small><b>${esc(ie.condicion || "—")}</b></div>
+                  </div>
+                  <div class="ident-cod">
+                    <small>Código modular</small>
+                    <div class="ident-cods">
+                      ${["Inicial", "Primaria", "Secundaria"].map(n => `<button type="button" class="ident-cod-caja" data-rac-nivel="${n}"><span>${n}</span><b>${esc(codModPorNivel(ie, n))}</b><small>Ver análisis →</small></button>`).join("")}
+                    </div>
+                  </div>
+                </div>
+                ${seccion("Datos adicionales", [["Zona", ie.zona], ["Frontera", si(ie.frontera)], ["Gestión", ie.gestion], ["JEC", si(ie.jec)], ["Estudiantes", ie.estudiantes], ["Latitud", ie.latitud], ["Longitud", ie.longitud], ["Altitud (msnm)", ie.altitud]])}
                 ${seccion("Otros datos", extras)}
               </section>
               <section class="cuadro">
                 <span class="cuadro-num">2</span><h2 class="cuadro-titulo">Personal (CAP)</h2>
-                ${bloquePersonal}
+                ${capHtml}
               </section>
               <section class="cuadro">
                 <span class="cuadro-num">3</span><h2 class="cuadro-titulo">Lista nominal</h2>
@@ -961,7 +1289,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
               </section>
               <section class="cuadro">
                 <span class="cuadro-num">5</span><h2 class="cuadro-titulo">Análisis de racionalización</h2>
-                <p class="vacio">Pendiente: esta sección se activará cuando la UGEL valide los criterios.</p>
+                ${analisisRacionalizacion(ie)}
               </section>
             </div>
           </div>
@@ -971,8 +1299,17 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       </article>`;
   }
 
+  function irAnalisis() {
+    requestAnimationFrame(() => {
+      const c = document.getElementById("cuadros");
+      if (c) c.scrollTo({ left: c.scrollWidth, behavior: "smooth" });
+      document.querySelector(".cuadros-barra")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
+    const portadaEl = document.getElementById("portada");
+    if (portadaEl) portadaEl.style.display = (v.tipo === "home" || v.tipo === "distrito" || v.tipo === "mapa") ? "" : "none";
     if (mapaLeaflet && v.tipo !== "mapa") { mapaLeaflet.remove(); mapaLeaflet = null; marcadoresMapa = {}; }
     if (v.tipo === "home") app.innerHTML = vistaHome();
     else if (v.tipo === "distrito") app.innerHTML = vistaDistrito(v.clave);
@@ -1004,6 +1341,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     eyebrow: "Municipalidad Provincial de Castilla · Aplao",
     titulo: "Directorio de instituciones educativas",
     subtitulo: "Consulta las instituciones de la provincia de Castilla: ubicación, datos, personal y anexos.",
+    lema: "UGEL Castilla: Más innovación, mejores resultados.",
     boton1Texto: "Ver mapa de instituciones", boton1Accion: "mapa", boton1Url: "",
     boton2Texto: "Explorar distritos", boton2Accion: "distritos", boton2Url: "",
     mostrarBotones: true
@@ -1032,10 +1370,25 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         ${cfg.eyebrow ? `<span class="eyebrow">${esc(cfg.eyebrow)}</span>` : ""}
         <h1>${esc(cfg.titulo)}</h1>
         ${cfg.subtitulo ? `<p>${esc(cfg.subtitulo)}</p>` : ""}
+        ${cfg.lema ? `<p class="lema-portada">${esc(cfg.lema)}</p>` : ""}
         ${cfg.mostrarBotones ? `<div class="botones-portada">${botonPortada(cfg, 1)}${botonPortada(cfg, 2)}</div>` : ""}
       </div>`;
   }
   let dbPortada = null;
+  // Tolerancia definida en el panel (pestaña Análisis).
+  async function cargarTolerancia() {
+    try {
+      if (!db) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+      const doc = await db.collection("config").doc("analisis").get();
+      if (doc.exists) {
+        const d = doc.data();
+        if (typeof d.tolerancia === "number") estado.tolerancia = Math.max(0, Math.min(10, d.tolerancia));
+        reglasCfg = d.reglas || {};
+        inicialCfg = d.inicial || null;
+        pintar();
+      }
+    } catch (e) { /* si no hay configuración, se usa 4 */ }
+  }
   async function cargarPortada() {
     try {
       if (!db) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
@@ -1071,7 +1424,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   // ---------- Acceso al panel ----------
   // Dirección del panel de administración (pégala cuando lo publiques).
   // Panel de administración: debe estar en la misma carpeta que esta página (castilla-admin-ugel-v28.html).
-  const ADMIN_URL = "castilla-admin-ugel-v38.html";
+  const ADMIN_URL = "castilla-admin-ugel-v66.html";
   const CREDENCIALES = { usuario: "luana", clave: "1234" };
   const modal = document.getElementById("modalUsuarios");
   const abrirLogin = () => {
@@ -1083,7 +1436,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     document.getElementById("loginUsuario").focus();
   };
   const cerrarLogin = () => { modal.hidden = true; };
-  document.getElementById("btnUsuarios").addEventListener("click", abrirLogin);
+  document.getElementById("btnUsuarios").addEventListener("click", () => { window.location.href = ADMIN_URL; });
   document.getElementById("loginCerrar").addEventListener("click", cerrarLogin);
   document.getElementById("loginSalir").addEventListener("click", cerrarLogin);
   modal.addEventListener("click", e => { if (e.target === modal) cerrarLogin(); });
@@ -1119,6 +1472,8 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       }
       return;
     }
+    if (b.dataset.racNivel !== undefined) { estado.racNivel = b.dataset.racNivel; pintar(); irAnalisis(); return; }
+    if (b.dataset.racTodos !== undefined) { estado.racNivel = null; pintar(); irAnalisis(); return; }
     if (b.dataset.foto !== undefined) { estado.foto = Number(b.dataset.foto); pintar(); }
   });
 
@@ -1136,6 +1491,12 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     if (c) c.textContent = `${vis} de ${filas.length}`;
   }
   app.addEventListener("change", e => { if (e.target.matches("[data-nominal-cat]")) aplicarNominal(); });
+  app.addEventListener("change", e => {
+    if (e.target.id !== "racTolerancia") return;
+    estado.tolerancia = Math.max(0, Math.min(10, Number(e.target.value) || 0));
+    pintar();
+    irAnalisis();
+  });
   app.addEventListener("input", e => {
     if (!e.target.matches("[data-nominal]")) return;
     aplicarNominal();
@@ -1365,6 +1726,39 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
 
   renderPortada(null);
   cargarPortada();
+  cargarTolerancia();
+</script>
+<button class="ux-backtop" id="uxBackTop" type="button" aria-label="Volver arriba" title="Volver arriba">↑</button>
+<script>
+/* Mejoras de navegación independientes de los datos y del motor de vistas */
+(function(){
+ const back=document.getElementById('uxBackTop');
+ const update=()=>back.classList.toggle('visible',window.scrollY>500);
+ window.addEventListener('scroll',update,{passive:true}); update();
+ back.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+ document.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){
+     const modal=document.getElementById('modalUsuarios');
+     if(modal && !modal.hidden){modal.hidden=true;document.getElementById('btnUsuarios')?.focus();}
+   }
+   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+     const finder=document.querySelector('#app input[type="search"]');
+     if(finder){e.preventDefault();finder.focus();finder.select();}
+   }
+ });
+ const app=document.getElementById('app');
+ const observer=new MutationObserver(()=>{
+   app.querySelectorAll('.tabla-nominal,.tabla-p').forEach(el=>{
+     if(el.dataset.uxEnhanced)return;
+     el.dataset.uxEnhanced='true'; el.setAttribute('role','region');
+     el.setAttribute('tabindex','0'); el.setAttribute('aria-label','Tabla con desplazamiento horizontal');
+     const hint=document.createElement('div');hint.className='ux-table-help';
+     hint.textContent='↔ Desliza horizontalmente para consultar todas las columnas';
+     el.parentNode.insertBefore(hint,el);
+   });
+ });
+ observer.observe(app,{childList:true,subtree:true});
+})();
 </script>
 </body>
 </html>
