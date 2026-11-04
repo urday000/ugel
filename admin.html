@@ -2984,7 +2984,6 @@
     gate.hidden = false;
     msg.textContent = "Verificando tu acceso…";
     document.getElementById("btnSalir").hidden = false;
-    document.getElementById("btnGoogle").disabled = true;
     const email = (user.email || "").toLowerCase();
     const ref = db.collection("accesos").doc(email);
     let snap;
