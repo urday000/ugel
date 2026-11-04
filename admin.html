@@ -153,6 +153,7 @@
     <h2>Panel de administración</h2>
     <p>Inicia sesión con tu cuenta de Google autorizada.</p>
     <button type="button" class="primario" id="btnGoogle">Entrar con Google</button>
+    <button type="button" class="mini" id="btnSalir" hidden>Cambiar de cuenta</button>
     <p class="nota" id="gateMsg"></p>
   </div>
 </div>
@@ -2958,6 +2959,10 @@
     DR.set = negar; DR.update = negar; DR.delete = negar;
     firebase.firestore.WriteBatch.prototype.commit = negar;
   }
+  document.getElementById("btnSalir").addEventListener("click", async () => {
+    await auth.signOut();
+    msg.textContent = "Elige la cuenta con la que quieres entrar.";
+  });
   document.getElementById("btnGoogle").addEventListener("click", async () => {
     msg.textContent = "";
     if (location.protocol === "file:") {
@@ -2971,12 +2976,14 @@
     if (!user) {
       rolActual = null; emailActual = null; gate.hidden = false;
       if ((msg.textContent || "").startsWith("Verificando")) msg.textContent = "";
+      document.getElementById("btnSalir").hidden = true;
       document.getElementById("btnGoogle").disabled = false;
       return;
     }
     // Con sesión: se muestra solo el aviso mientras se revisa el acceso
     gate.hidden = false;
     msg.textContent = "Verificando tu acceso…";
+    document.getElementById("btnSalir").hidden = false;
     document.getElementById("btnGoogle").disabled = true;
     const email = (user.email || "").toLowerCase();
     const ref = db.collection("accesos").doc(email);
