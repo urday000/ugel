@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>document.documentElement.classList.add("verificando");</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Administración - Instituciones de Castilla</title>
@@ -143,6 +144,7 @@
   .gate-caja h2 { margin:0 0 8px; color:var(--accent); }
   .gate-caja p { color:var(--muted); }
   .gate-caja button { margin-top:12px; }
+  html.verificando body > *:not(#gateAcceso) { visibility:hidden !important; }
 </style>
 </head>
 <body>
@@ -2966,7 +2968,16 @@
     catch (e) { msg.textContent = "No se pudo iniciar sesión: " + e.message; }
   });
   auth.onAuthStateChanged(async user => {
-    if (!user) { rolActual = null; emailActual = null; gate.hidden = false; return; }
+    if (!user) {
+      rolActual = null; emailActual = null; gate.hidden = false;
+      if ((msg.textContent || "").startsWith("Verificando")) msg.textContent = "";
+      document.getElementById("btnGoogle").disabled = false;
+      return;
+    }
+    // Con sesión: se muestra solo el aviso mientras se revisa el acceso
+    gate.hidden = false;
+    msg.textContent = "Verificando tu acceso…";
+    document.getElementById("btnGoogle").disabled = true;
     const email = (user.email || "").toLowerCase();
     const ref = db.collection("accesos").doc(email);
     let snap;
@@ -2986,11 +2997,13 @@
       msg.textContent = "Tu cuenta (" + email + ") no tiene acceso activo. Pide al administrador de accesos que te autorice.";
       await auth.signOut();
       gate.hidden = false;
+      document.getElementById("btnGoogle").disabled = false;
       return;
     }
     rolActual = d.rol;
     emailActual = email;
     gate.hidden = true;
+    document.documentElement.classList.remove("verificando");
     const btnAcc = document.querySelector('[data-t="accesos"]');
     if (btnAcc) btnAcc.hidden = rolActual !== "administrador";
     if (rolActual === "visitante") { bloquearEscrituras(); if (typeof aviso === "function") aviso("Tu acceso es de visitante: puedes consultar, no modificar."); }
