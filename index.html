@@ -694,7 +694,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   <button type="button" data-nav="inicio" class="on">Inicio</button>
   <button type="button" data-nav="mapa">Mapa de instituciones</button>
   <button type="button" data-nav="actualizar">↻ Actualizar datos</button>
-  <button type="button" id="btnUsuarios" class="btn-usuarios">Usuarios</button>
+  <a href="admin.html" id="btnUsuarios" class="btn-usuarios" role="button">Usuarios</a>
 </nav>
 <div class="wrap">
   <header id="portada" class="portada"></header>
@@ -1424,7 +1424,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   // ---------- Acceso al panel ----------
   // Dirección del panel de administración (pégala cuando lo publiques).
   // Panel de administración: debe estar en la misma carpeta que esta página (castilla-admin-ugel-v28.html).
-  const ADMIN_URL = "castilla-admin-ugel-v66.html";
+  const ADMIN_URL = "admin.html";
   const CREDENCIALES = { usuario: "luana", clave: "1234" };
   const modal = document.getElementById("modalUsuarios");
   const abrirLogin = () => {
@@ -1436,7 +1436,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     document.getElementById("loginUsuario").focus();
   };
   const cerrarLogin = () => { modal.hidden = true; };
-  document.getElementById("btnUsuarios").addEventListener("click", () => { window.location.href = ADMIN_URL; });
+  
   document.getElementById("loginCerrar").addEventListener("click", cerrarLogin);
   document.getElementById("loginSalir").addEventListener("click", cerrarLogin);
   modal.addEventListener("click", e => { if (e.target === modal) cerrarLogin(); });
