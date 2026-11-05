@@ -2260,8 +2260,9 @@
       <h3>Criterios flexibles por institución</h3>
       <p class="nota">Elige la institución, el nivel y el grado. Indica cuántas secciones de ese grado tienen el aula estrecha y el mínimo para esas secciones. Las demás secciones usan el parámetro normal de la RVM. La tolerancia no cambia.</p>
       <div class="grid-2">
-        <label>Buscar institución<input id="flexBuscar" placeholder="Escribe el nombre, el código o el distrito"></label>
-        <label>Institución<select id="flexIE"><option value="">Elige una institución…</option>${opcionesIE(lista)}</select></label>
+        <label>Institución (escribe para buscar)<input id="flexIETxt" list="listaIEFlex" placeholder="Escribe el nombre, el código o el distrito" autocomplete="off"></label>
+        <input type="hidden" id="flexIE" value="">
+        <datalist id="listaIEFlex">${lista.map(x => `<option value="${esc(labelIE(x))}"></option>`).join("")}</datalist>
         <label>Nivel (código modular)<select id="flexCod"><option value="">Primero elige la institución</option></select></label>
         <label>Grado<select id="flexGrado"><option value="">Primero elige el nivel</option></select></label>
         <label>Secciones de ese grado con criterio<input id="flexN" type="number" min="1" max="20" placeholder="Ej. 1"></label>
@@ -2981,13 +2982,20 @@
   });
   document.addEventListener("click", e => { if (!e.target.closest(".anexo-combo")) cerrarListaAnexos(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarListaAnexos(); });
-  $("adB").addEventListener("input", e => {
-    if (e.target.id !== "flexBuscar") return;
-    const q = quitaTildes(e.target.value);
-    const lista = (instituciones || []).filter(x => quitaTildes(`${x.nombre} ${x.distrito || ""} ${x.codigo || ""} ${(x.codigosModulares || []).join(" ")}`).includes(q));
-    const sel = document.getElementById("flexIE");
-    if (sel) sel.innerHTML = `<option value="">Elige una institución…</option>` + opcionesIE(lista);
-  });
+  function labelIE(x) { return `${x.codigo || ""} ${x.nombre || ""} (${x.distrito || ""})`.trim(); }
+  // Traduce el texto escrito en el campo a la institución elegida y avisa a los demás campos.
+  function sincronizarIE(txt) {
+    const ie = (instituciones || []).find(x => labelIE(x) === String(txt || "").trim());
+    const h = document.getElementById("flexIE");
+    if (!h) return;
+    const nuevo = ie ? ie.id : "";
+    if (h.value !== nuevo) {
+      h.value = nuevo;
+      h.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+  $("adB").addEventListener("input", e => { if (e.target.id === "flexIETxt") sincronizarIE(e.target.value); });
+  $("adB").addEventListener("change", e => { if (e.target.id === "flexIETxt") sincronizarIE(e.target.value); });
   $("adB").addEventListener("change", e => {
     if (e.target.id !== "flexIE" && e.target.id !== "flexCod") return;
     const ie = (instituciones || []).find(x => x.id === document.getElementById("flexIE")?.value);
