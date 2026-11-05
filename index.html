@@ -687,6 +687,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   .rac-prom b { color:var(--text); }
   .lema-portada { margin:12px 0 0; font-weight:800; letter-spacing:.01em; color:#f5d86b; font-size:clamp(1rem,1.6vw,1.2rem); }
   .rac-flex { font-size:.92rem; background:#fef9e7; border:1px solid #f5d86b; border-radius:10px; padding:8px 12px; margin:6px 0 10px; color:var(--text); }
+  .flex-badge { display:inline-block; font-style:normal; font-size:.78rem; font-weight:700; background:#fef3c7; color:#92400e; border:1px solid #f5d86b; border-radius:999px; padding:3px 9px; margin:4px 0; justify-self:start; }
 </style>
 </head>
 <body>
@@ -1029,6 +1030,13 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       const m = (ie.matriculaPorNivel || []).find(x => sinTildes(x.nivel || "").includes(nombre.toLowerCase()));
       return m && m.codigo ? m.codigo : "—";
     }
+    // Etiqueta visible cuando un nivel tiene criterio flexible.
+    function badgeFlex(ie, nivel) {
+      const cod = codModPorNivel(ie, nivel);
+      const c = (ie.criteriosFlexibles || {})[cod];
+      const grados = c && c.grados ? Object.keys(c.grados).length : 0;
+      return grados ? `<em class="flex-badge">Criterio flexible en ${grados} grado(s)</em>` : "";
+    }
     // Mínimos de estudiantes por sección (RVM 071-2024, Educación Básica Regular).
     // null = la tabla no aplica en esa zona.
     const MINIMOS_RVM071 = [
@@ -1087,11 +1095,13 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         if (clave === "inicial") return `<span><b>${esc(m.nivel)}:</b> criterio temporal (total del nivel)</span>`;
         return `<span><b>${esc(m.nivel)}:</b> ${minimo == null ? "sin dato" : minimo + " por sección"}</span>`;
       }).join("");
+      const flexResumen = todos.flatMap(m => Object.entries(((ie.criteriosFlexibles || {})[m.codigo] || {}).grados || {}).map(([gr, d]) => `${esc(m.nivel)} · ${esc(gr)}: ${esc(d.n)} sección(es) con ${esc(d.minimo)}`));
       const cabeza = `<div class="rac-barra">
           <span class="rac-tol">Tolerancia de flexibilidad: <b>${tol}</b> estudiantes (definida por la UGEL)</span>
           ${filtro ? `<button type="button" class="mini" data-rac-todos="1">Ver todos los niveles</button>` : ""}
         </div>
-        <p class="nota rac-param">Mínimo por sección: ${parametros}</p>`;
+        <p class="nota rac-param">Mínimo por sección: ${parametros}</p>
+        ${flexResumen.length ? `<p class="rac-flex">Esta institución usa criterio flexible en: <b>${flexResumen.join(" · ")}</b></p>` : ""}`;
       if (!niveles.length) return `${cabeza}<p class="vacio">Sin datos de matrícula para analizar.</p>`;
       const cuenta = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
       const resumenGrados = [];
@@ -1099,14 +1109,15 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         const nv = sinTildes(m.nivel || "");
         const clave = nv.includes("inicial") ? "inicial" : nv.includes("primaria") ? "primaria" : nv.includes("secundaria") ? "secundaria" : null;
         const regla = clave && tipoIE ? MINIMOS_RVM071.find(r => r.nivel === clave && r.tipo.test(tipoIE)) : null;
-        const flexMin = (ie.criteriosFlexibles || {})[m.codigo]?.minimo;
-        const flexMotivo = (ie.criteriosFlexibles || {})[m.codigo]?.motivo || "";
-        const minimo = flexMin ? flexMin : (regla ? minPara(regla) : null);
+        const minimo = regla ? minPara(regla) : null;
         if (clave === "inicial") return inicialBloque(m);
         const grados = (m.detalle || []).filter(g => (Number(g.total) || 0) || (Number(g.secciones) || 0));
         const tarjetas = grados.map(g => {
           const sec = Number(g.secciones) || 0;
           const tot = Number(g.total) || 0;
+          const fg = ((ie.criteriosFlexibles || {})[m.codigo]?.grados || {})[g.grado] || null;
+          // Capacidad de s secciones: las secciones con criterio usan su mínimo; las demás, el parámetro normal.
+          const capOf = s => (minimo == null ? null : (fg ? Number(fg.minimo) * Math.min(Number(fg.n), s) + minimo * (s - Math.min(Number(fg.n), s)) : minimo * s));
           const tol = tolPara(regla);
           let color, etiqueta, alcance = "", sugerencia = "";
           if (!tipoIE) { color = "gris"; etiqueta = "Gris: falta el tipo de IE"; }
@@ -1115,12 +1126,12 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
           else if (minimo === null) { color = "gris"; etiqueta = "Gris: la tabla no aplica en zona urbana"; }
           else if (!sec) { color = "gris"; etiqueta = "Gris: falta el número de secciones"; }
           else {
-            const dif = minimo * sec - tot;
+            const dif = capOf(sec) - tot;
             if (dif === 0) { color = "verde"; etiqueta = "Verde: cumple"; }
             else if (dif < 0) {
               color = "amarillo"; etiqueta = "Amarillo: excede"; alcance = `sobran ${-dif}`;
-              const cn = tot / minimo;
-              if (Math.round(cn * 10) % 10 >= 5) sugerencia = `Sugerencia: aumentar de ${sec} a ${Math.ceil(cn)} secciones (${tot} ÷ ${minimo} = ${cn.toFixed(1).replace(".", ",")}, redondeado hacia arriba).`;
+              const cn = tot / (capOf(sec) / sec);
+              if (Math.round(cn * 10) % 10 >= 5) sugerencia = `Sugerencia: aumentar de ${sec} a ${Math.ceil(cn)} secciones (${tot} ÷ ${(capOf(sec) / sec).toFixed(1).replace(".", ",")} = ${cn.toFixed(1).replace(".", ",")}, redondeado hacia arriba).`;
             }
             else if (dif <= tol) { color = "amarillo"; etiqueta = "Amarillo: necesita revisión"; alcance = `faltan ${dif}`; }
             else {
@@ -1128,7 +1139,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
               if (sec === 1) { color = "amarillo"; etiqueta = "Amarillo: una sección, no alcanza"; alcance = `faltan ${dif}`; }
               else { color = "rojo"; etiqueta = "Rojo: no cumple"; alcance = `faltan ${dif}`; }
               for (let s2 = sec - 1; s2 >= 1; s2--) {
-                const d2 = minimo * s2 - tot;
+                const d2 = capOf(s2) - tot;
                 if (d2 === 0) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: cumple exactamente.`; break; }
                 if (d2 >= 1 && d2 <= tol) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: quedaría en amarillo (faltarían ${d2}).`; break; }
                 if (d2 <= -1 && d2 >= -tol) { sugerencia = `Sugerencia: reducir de ${sec} a ${s2} secciones: quedaría en amarillo (excedería ${-d2}).`; break; }
@@ -1142,11 +1153,11 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
             <div class="rac-color">${esc(etiqueta)}</div>
             ${alcance ? `<div class="rac-alcance">${esc(alcance)}</div>` : ""}
             ${sec > 1 ? `<div class="rac-prom">Promedio por sección: <b>${(tot / sec).toFixed(1).replace(".", ",")}</b></div>` : ""}
+            ${fg ? `<div class="rac-flex">Criterio flexible: <b>${esc(fg.n)} de ${sec} secciones</b> con <b>${esc(fg.minimo)}</b> estudiantes por sección${fg.motivo ? " (" + esc(fg.motivo) + ")" : ""}.</div>` : ""}
             ${sugerencia ? `<div class="rac-sug">${esc(sugerencia)}</div>` : ""}
           </div>`;
         }).join("");
         return `<h3 class="rac-nivel">${esc(m.nivel)} · código ${esc(m.codigo || "—")}</h3>
-          ${flexMin ? `<p class="rac-flex">Criterio flexible: <b>${flexMin} estudiantes por sección</b>${flexMotivo ? " (" + esc(flexMotivo) + ")" : ""}. Reemplaza el parámetro de la RVM para este nivel.</p>` : ""}
           ${tarjetas ? `<div class="rac-grid">${tarjetas}</div>` : `<p class="vacio">Sin detalle por grado para este nivel.</p>`}`;
       }).join("");
       return `${cabeza}
@@ -1271,7 +1282,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
                   <div class="ident-cod">
                     <small>Código modular</small>
                     <div class="ident-cods">
-                      ${["Inicial", "Primaria", "Secundaria"].map(n => `<button type="button" class="ident-cod-caja" data-rac-nivel="${n}"><span>${n}</span><b>${esc(codModPorNivel(ie, n))}</b><small>Ver análisis →</small></button>`).join("")}
+                      ${["Inicial", "Primaria", "Secundaria"].map(n => `<button type="button" class="ident-cod-caja" data-rac-nivel="${n}"><span>${n}</span><b>${esc(codModPorNivel(ie, n))}</b>${badgeFlex(ie, n)}<small>Ver análisis →</small></button>`).join("")}
                     </div>
                   </div>
                 </div>
@@ -1429,7 +1440,6 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   // Dirección del panel de administración (pégala cuando lo publiques).
   // Panel de administración: debe estar en la misma carpeta que esta página (castilla-admin-ugel-v28.html).
   const ADMIN_URL = "admin.html";
-  const CREDENCIALES = { usuario: "luana", clave: "1234" };
   const modal = document.getElementById("modalUsuarios");
   const abrirLogin = () => {
     document.getElementById("formLogin").hidden = false;
@@ -1447,11 +1457,8 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   const intentarEntrar = () => {
     const usuario = document.getElementById("loginUsuario").value.trim().toLowerCase();
     const clave = document.getElementById("loginClave").value;
-    if (usuario === CREDENCIALES.usuario && clave === CREDENCIALES.clave) {
-      window.location.href = ADMIN_URL;
-    } else {
-      document.getElementById("loginMsg").textContent = "Usuario o contraseña incorrectos.";
-    }
+    // El acceso real al panel lo controla Google y la lista de accesos.
+    window.location.href = ADMIN_URL;
   };
   document.getElementById("loginEntrar").addEventListener("click", intentarEntrar);
   document.getElementById("loginClave").addEventListener("keydown", e => { if (e.key === "Enter") intentarEntrar(); });

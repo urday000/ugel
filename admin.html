@@ -2239,52 +2239,72 @@
   }
   // Pestaña Análisis: parámetros + criterios flexibles por institución.
   function vAnalisis() { return vAnalisisBase() + vCriteriosFlex(); }
+  // ---------- Criterios flexibles: por institución, nivel, grado y número de secciones ----------
+  function gradosDe(ie, cod) {
+    const m = (ie?.matriculaPorNivel || []).find(x => x.codigo === cod);
+    return (m?.detalle || []).filter(g => (Number(g.total) || 0) > 0 || (Number(g.secciones) || 0) > 0);
+  }
+  function opcionesIE(lista) {
+    return lista.map(x => `<option value="${esc(x.id)}">${esc(x.codigo || "")} ${esc(x.nombre)} (${esc(x.distrito || "")})</option>`).join("");
+  }
   function vCriteriosFlex() {
     const lista = (instituciones || []).slice().sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || ""), "es"));
-    const opcionesIE = lista.map(x => `<option value="${esc(x.id)}">${esc(x.nombre)} (${esc(x.distrito || "")})</option>`).join("");
-    const filas = lista.flatMap(x => Object.entries(x.criteriosFlexibles || {}).map(([cod, c]) => `<tr>
-        <td>${esc(x.nombre)}</td><td>${esc(x.distrito || "")}</td><td>${esc(cod)}</td><td><b>${esc(c.minimo)}</b></td><td>${esc(c.motivo || "—")}</td>
-        <td><button type="button" class="mini peligro" data-a="flex-quitar" data-ie="${esc(x.id)}" data-cod="${esc(cod)}">Quitar</button></td></tr>`)).join("");
+    const filas = lista.flatMap(x => Object.entries(x.criteriosFlexibles || {}).flatMap(([cod, c]) => Object.entries(c.grados || {}).map(([g, d]) => {
+      const sec = gradosDe(x, cod).find(y => y.grado === g);
+      return `<tr>
+        <td>${esc(x.nombre)}</td><td>${esc(x.distrito || "")}</td><td>${esc(cod)}</td><td>${esc(g)}</td>
+        <td>${esc(d.n)} de ${esc(sec?.secciones ?? "?")}</td><td><b>${esc(d.minimo)}</b></td><td>${esc(d.motivo || "—")}</td>
+        <td><button type="button" class="mini peligro" data-a="flex-quitar" data-ie="${esc(x.id)}" data-cod="${esc(cod)}" data-grado="${esc(g)}">Quitar</button></td></tr>`;
+    }))).join("");
     return `<div class="panel" style="margin-top:18px">
       <h3>Criterios flexibles por institución</h3>
-      <p class="nota">Elige la institución y el nivel (código modular) que puede usar el criterio. Ese mínimo reemplaza el de la RVM solo para ese nivel. La tolerancia no cambia.</p>
+      <p class="nota">Elige la institución, el nivel y el grado. Indica cuántas secciones de ese grado tienen el aula estrecha y el mínimo para esas secciones. Las demás secciones usan el parámetro normal de la RVM. La tolerancia no cambia.</p>
       <div class="grid-2">
-        <label>Institución<select id="flexIE"><option value="">Elige una institución…</option>${opcionesIE}</select></label>
+        <label>Buscar institución<input id="flexBuscar" placeholder="Escribe el nombre, el código o el distrito"></label>
+        <label>Institución<select id="flexIE"><option value="">Elige una institución…</option>${opcionesIE(lista)}</select></label>
         <label>Nivel (código modular)<select id="flexCod"><option value="">Primero elige la institución</option></select></label>
-        <label>Estudiantes por sección<input id="flexMin" type="number" min="1" max="200"></label>
+        <label>Grado<select id="flexGrado"><option value="">Primero elige el nivel</option></select></label>
+        <label>Secciones de ese grado con criterio<input id="flexN" type="number" min="1" max="20" placeholder="Ej. 1"></label>
+        <label>Estudiantes por sección (en esas secciones)<input id="flexMin" type="number" min="1" max="200" placeholder="Ej. 25"></label>
         <label>Motivo<input id="flexMot" placeholder="Ej. aula estrecha"></label>
       </div>
       <div class="acciones" style="margin-top:12px"><button type="button" class="primario" data-a="flex-guardar">Agregar criterio flexible</button></div>
       <div class="tabla" style="margin-top:14px"><table>
-        <thead><tr><th>Institución</th><th>Distrito</th><th>Código modular</th><th>Mínimo</th><th>Motivo</th><th></th></tr></thead>
-        <tbody>${filas || `<tr><td colspan="6">Ninguna institución tiene criterio flexible todavía.</td></tr>`}</tbody>
+        <thead><tr><th>Institución</th><th>Distrito</th><th>Código modular</th><th>Grado</th><th>Secciones con criterio</th><th>Mínimo</th><th>Motivo</th><th></th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="8">Ninguna institución tiene criterio flexible todavía.</td></tr>`}</tbody>
       </table></div>
     </div>`;
   }
   async function guardarFlex() {
-    const ieId = document.getElementById("flexIE")?.value;
-    const cod = document.getElementById("flexCod")?.value;
-    const min = Number(document.getElementById("flexMin")?.value);
-    const motivo = (document.getElementById("flexMot")?.value || "").trim();
-    const ie = (instituciones || []).find(x => x.id === ieId);
+    const val = id => (document.getElementById(id)?.value || "");
+    const ie = (instituciones || []).find(x => x.id === val("flexIE"));
+    const cod = val("flexCod"), grado = val("flexGrado");
+    const n = Number(val("flexN")), min = Number(val("flexMin")), motivo = val("flexMot").trim();
     if (!ie) { aviso("Elige la institución."); return; }
     if (!cod) { aviso("Elige el nivel de esa institución."); return; }
+    if (!grado) { aviso("Elige el grado."); return; }
+    const secTot = Number(gradosDe(ie, cod).find(g => g.grado === grado)?.secciones) || 0;
+    if (!Number.isInteger(n) || n < 1 || n > secTot) { aviso(`Las secciones con criterio deben ser de 1 a ${secTot}, que es el número de secciones de ese grado.`); return; }
     if (!Number.isInteger(min) || min < 1 || min > 200) { aviso("El mínimo debe ser un número entero de 1 a 200."); return; }
-    const cur = { ...(ie.criteriosFlexibles || {}), [cod]: { minimo: min, motivo } };
-    await db.collection("instituciones").doc(ie.id).set({ criteriosFlexibles: cur }, { merge: true });
+    const cur = JSON.parse(JSON.stringify(ie.criteriosFlexibles || {}));
+    cur[cod] = { grados: { ...((cur[cod] && cur[cod].grados) || {}), [grado]: { n, minimo: min, motivo } } };
+    await db.collection("instituciones").doc(ie.id).update({ criteriosFlexibles: cur });
     ie.criteriosFlexibles = cur;
-    await registrarHistorial("Criterio flexible", "Agregado", `${ie.nombre} · ${cod} · ${min} por sección${motivo ? " · " + motivo : ""}`);
+    await registrarHistorial("Criterio flexible", "Agregado", `${ie.nombre} · ${cod} · ${grado} · ${n} sección(es) con ${min}${motivo ? " · " + motivo : ""}`);
     aviso("Criterio flexible guardado.", true);
     pintarAdmin();
   }
-  async function quitarFlex(ieId, cod) {
+  async function quitarFlex(ieId, cod, grado) {
     const ie = (instituciones || []).find(x => x.id === ieId);
     if (!ie) return;
-    const cur = { ...(ie.criteriosFlexibles || {}) };
-    delete cur[cod];
-    await db.collection("instituciones").doc(ie.id).set({ criteriosFlexibles: cur }, { merge: true });
+    const cur = JSON.parse(JSON.stringify(ie.criteriosFlexibles || {}));
+    if (cur[cod] && cur[cod].grados) {
+      delete cur[cod].grados[grado];
+      if (!Object.keys(cur[cod].grados).length) delete cur[cod];
+    }
+    await db.collection("instituciones").doc(ie.id).update({ criteriosFlexibles: cur });
     ie.criteriosFlexibles = cur;
-    await registrarHistorial("Criterio flexible", "Quitado", `${ie.nombre} · ${cod}`);
+    await registrarHistorial("Criterio flexible", "Quitado", `${ie.nombre} · ${cod} · ${grado}`);
     aviso("Criterio flexible quitado.", true);
     pintarAdmin();
   }
@@ -2888,7 +2908,7 @@
       else if (a === "anexo-agregar") await agregarAnexoDistrito();
       else if (a === "acceso-guardar") await guardarAcceso();
       else if (a === "flex-guardar") await guardarFlex();
-      else if (a === "flex-quitar") await quitarFlex(b.dataset.ie, b.dataset.cod);
+      else if (a === "flex-quitar") await quitarFlex(b.dataset.ie, b.dataset.cod, b.dataset.grado);
       else if (a === "acceso-toggle") await cambiarActivoAcceso(b.dataset.id);
       else if (a === "acceso-quitar") await quitarAcceso(b.dataset.id);
       else if (a === "pers-verificar") await verificarRepetidosPersonal();
@@ -2961,6 +2981,24 @@
   });
   document.addEventListener("click", e => { if (!e.target.closest(".anexo-combo")) cerrarListaAnexos(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarListaAnexos(); });
+  $("adB").addEventListener("input", e => {
+    if (e.target.id !== "flexBuscar") return;
+    const q = quitaTildes(e.target.value);
+    const lista = (instituciones || []).filter(x => quitaTildes(`${x.nombre} ${x.distrito || ""} ${x.codigo || ""} ${(x.codigosModulares || []).join(" ")}`).includes(q));
+    const sel = document.getElementById("flexIE");
+    if (sel) sel.innerHTML = `<option value="">Elige una institución…</option>` + opcionesIE(lista);
+  });
+  $("adB").addEventListener("change", e => {
+    if (e.target.id !== "flexIE" && e.target.id !== "flexCod") return;
+    const ie = (instituciones || []).find(x => x.id === document.getElementById("flexIE")?.value);
+    const cod = document.getElementById("flexCod")?.value;
+    const sel = document.getElementById("flexGrado");
+    if (!sel) return;
+    const grados = ie && cod ? gradosDe(ie, cod) : [];
+    sel.innerHTML = grados.length
+      ? `<option value="">Elige el grado…</option>` + grados.map(g => `<option value="${esc(g.grado)}">${esc(g.grado)} (${esc(g.secciones)} sección${Number(g.secciones) === 1 ? "" : "es"})</option>`).join("")
+      : `<option value="">${ie ? "Sin grados con matrícula" : "Primero elige la institución"}</option>`;
+  });
   $("adB").addEventListener("focusin", e => { if (e.target.name === "anexo") pintarListaAnexo(e.target.value); });
   $("adB").addEventListener("focusout", e => { if (e.target.name === "anexo") setTimeout(() => { const c = document.getElementById("listaAnexos"); if (c) c.hidden = true; }, 180); });
   $("adB").addEventListener("input", e => { if (e.target.name === "anexo") pintarListaAnexo(e.target.value); });
