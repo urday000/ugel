@@ -1178,14 +1178,6 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       ultimoResumenAnalisis = { cuenta, resumenGrados, tol };
       return `${cabeza}
         ${bloques}
-        <div class="rac-resumen">
-          <b>Resumen de ${filtro ? esc(estado.racNivel) : "todos los niveles"}:</b>
-          <span class="rac-pill verde">Verde ${cuenta.verde}</span>
-          <span class="rac-pill amarillo">Amarillo ${cuenta.amarillo}</span>
-          <span class="rac-pill rojo">Rojo ${cuenta.rojo}</span>
-          <span class="rac-pill gris">Gris ${cuenta.gris}</span>
-          <ul>${resumenGrados.map(r => `<li><b>${esc(r.grado)}</b> (${esc(r.nivel)}): ${esc(r.color)}${r.alcance ? " · " + esc(r.alcance) : ""}</li>`).join("")}</ul>
-        </div>
         <p class="nota">Referencia: RVM 071-2024 (EBR). Verde: diferencia 0. Amarillo: sobran estudiantes, o faltan hasta la tolerancia (${tol}). Rojo: faltan más de ${tol}. Un grado con una sola sección que no alcanza queda en amarillo. Gris: falta un dato. La tolerancia la define la UGEL; puedes cambiarla arriba.</p>`;
     }
     // Estructura del CAP de la propuesta: cuatro grupos y total de personal.
