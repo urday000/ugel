@@ -430,6 +430,7 @@
 
   // ---------- Instituciones ----------
   function vInstituciones() {
+    const dg = diagnosticoGeneral();
     return `
       <div class="cab">
         <div><h1 class="titulo">Instituciones educativas</h1><p class="sub">Haz clic en Editar para cambiar cualquier dato de la institución.</p></div>
@@ -446,6 +447,9 @@
           <option value="sinDirector">Sin director</option>
           <option value="sinFoto">Sin foto</option>
           <option value="sinCodigo">Sin código modular</option>
+          <option value="sinDocentes">Sin docentes (${dg.sinDoc})</option>
+          <option value="sinEstudiantes">Sin estudiantes (${dg.sinEst})</option>
+          <option value="sinDatos">Sin docentes o sin estudiantes (${dg.sinAlgo})</option>
         </select></label>
         <label>Buscar<input id="fBuscar" type="search" placeholder="Nombre, código, dirección o director"></label>
         <button type="button" data-a="ie-carga-inicial">Cargar datos iniciales</button>
@@ -729,6 +733,25 @@
     const x = instituciones.find(i => i.id === id);
     return x ? { id, datos: copiaSinId(x) } : null;
   }
+  // Detector de datos: cuántos docentes y cuántos estudiantes tiene cada IE.
+  function diagIE(x) {
+    const pers = Array.isArray(personalCache) ? personalCache : [];
+    const porPersonal = x.claveUGEL ? pers.filter(p => p.claveUGEL === x.claveUGEL).length : 0;
+    const docentes = porPersonal || Number(x.docentes) || 0;
+    const estudiantes = (x.matriculaPorNivel || []).length && Number(x.estudiantes) > 0 ? Number(x.estudiantes) : 0;
+    return { docentes, estudiantes };
+  }
+  function diagnosticoGeneral() {
+    const lista = instituciones || [];
+    let sinDoc = 0, sinEst = 0, sinAlgo = 0;
+    lista.forEach(x => {
+      const d = diagIE(x);
+      if (!d.docentes) sinDoc++;
+      if (!d.estudiantes) sinEst++;
+      if (!d.docentes || !d.estudiantes) sinAlgo++;
+    });
+    return { total: lista.length, sinDoc, sinEst, sinAlgo };
+  }
   function cumpleFiltroPend(x, v) {
     if (!v) return true;
     if (v === "sinCoords") return typeof x.latitud !== "number" || typeof x.longitud !== "number";
@@ -736,6 +759,9 @@
     if (v === "sinDirector") return !x.director;
     if (v === "sinFoto") return !(x.imagenes && x.imagenes.length);
     if (v === "sinCodigo") return !x.codigo;
+    if (v === "sinDocentes") return !diagIE(x).docentes;
+    if (v === "sinEstudiantes") return !diagIE(x).estudiantes;
+    if (v === "sinDatos") { const d = diagIE(x); return !d.docentes || !d.estudiantes; }
     return true;
   }
   async function cambiarVerificacion(ids, valor) {
