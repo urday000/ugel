@@ -688,6 +688,8 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   .lema-portada { margin:12px 0 0; font-weight:800; letter-spacing:.01em; color:#f5d86b; font-size:clamp(1rem,1.6vw,1.2rem); }
   .rac-flex { font-size:.92rem; background:#fef9e7; border:1px solid #f5d86b; border-radius:10px; padding:8px 12px; margin:6px 0 10px; color:var(--text); }
   .flex-badge { display:inline-block; font-style:normal; font-size:.78rem; font-weight:700; background:#fef3c7; color:#92400e; border:1px solid #f5d86b; border-radius:999px; padding:3px 9px; margin:4px 0; justify-self:start; }
+  .rac-resumen-total { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .rac-resumen-total .rac-pill { font-size:.95rem; padding:6px 14px; }
 </style>
 </head>
 <body>
@@ -1025,6 +1027,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     const docentesTotal = (ie.docentes !== undefined && ie.docentes !== null && ie.docentes !== "")
       ? ie.docentes
       : visiblesIE.filter(x => /docen/.test(sinTildes(x.tipoTrabajador || ""))).length;
+    let ultimoResumenAnalisis = null;
     // Código modular que corresponde a cada nivel (Inicial, Primaria o Secundaria).
     function codModPorNivel(ie, nombre) {
       const m = (ie.matriculaPorNivel || []).find(x => sinTildes(x.nivel || "").includes(nombre.toLowerCase()));
@@ -1036,6 +1039,18 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
       const c = (ie.criteriosFlexibles || {})[cod];
       const grados = c && c.grados ? Object.keys(c.grados).length : 0;
       return grados ? `<em class="flex-badge">Criterio flexible en ${grados} grado(s)</em>` : "";
+    }
+    // Sexta pestaña: resumen del análisis (totales por color y resultado de cada grado).
+    function resumenAnalisisHtml() {
+      const r = ultimoResumenAnalisis;
+      if (!r) return `<p class="vacio">Sin datos para resumir.</p>`;
+      const nombres = { verde: "Verde", amarillo: "Amarillo", rojo: "Rojo", gris: "Gris" };
+      const pills = ["verde", "amarillo", "rojo", "gris"].map(k => `<span class="rac-pill ${k}">${nombres[k]} ${r.cuenta[k] || 0}</span>`).join("");
+      const filas = r.resumenGrados.map(g => `<tr><td>${esc(g.nivel)}</td><td>${esc(g.grado)}</td><td><span class="rac-pill ${g.color}">${esc(nombres[g.color] || g.color)}</span></td><td>${esc(g.alcance || "—")}</td></tr>`).join("");
+      return `<div class="rac-resumen-total">${pills}</div>
+        <div class="tabla-p"><table><thead><tr><th>Nivel</th><th>Grado</th><th>Resultado</th><th>Alcance</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="4">Sin grados para analizar.</td></tr>`}</tbody></table></div>
+        <p class="nota">Tolerancia de flexibilidad: <b>${esc(r.tol)}</b> estudiantes. Verde: cumple. Amarillo: necesita revisión. Rojo: no cumple. Gris: falta un dato.</p>`;
     }
     // Mínimos de estudiantes por sección (RVM 071-2024, Educación Básica Regular).
     // null = la tabla no aplica en esa zona.
@@ -1160,6 +1175,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
         return `<h3 class="rac-nivel">${esc(m.nivel)} · código ${esc(m.codigo || "—")}</h3>
           ${tarjetas ? `<div class="rac-grid">${tarjetas}</div>` : `<p class="vacio">Sin detalle por grado para este nivel.</p>`}`;
       }).join("");
+      ultimoResumenAnalisis = { cuenta, resumenGrados, tol };
       return `${cabeza}
         ${bloques}
         <div class="rac-resumen">
@@ -1261,6 +1277,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
               <button type="button" data-cdot="2"><span>3</span> Lista nominal</button>
               <button type="button" data-cdot="3"><span>4</span> Estudiantes</button>
               <button type="button" data-cdot="4"><span>5</span> Análisis</button>
+              <button type="button" data-cdot="5"><span>6</span> Resumen</button>
             </nav>
             <button type="button" data-cnav="1" aria-label="Sección siguiente">›</button>
           </div>
@@ -1306,6 +1323,10 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
                 <span class="cuadro-num">5</span><h2 class="cuadro-titulo">Análisis de racionalización</h2>
                 ${analisisRacionalizacion(ie)}
               </section>
+              <section class="cuadro">
+                <span class="cuadro-num">6</span><h2 class="cuadro-titulo">Resumen del análisis</h2>
+                ${resumenAnalisisHtml()}
+              </section>
             </div>
           </div>
           ${mapa}
@@ -1317,7 +1338,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
   function irAnalisis() {
     requestAnimationFrame(() => {
       const c = document.getElementById("cuadros");
-      if (c) c.scrollTo({ left: c.scrollWidth, behavior: "smooth" });
+      if (c) c.scrollTo({ left: 4 * (c.querySelector(".cuadro").offsetWidth + 16), behavior: "smooth" });
       document.querySelector(".cuadros-barra")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
@@ -1516,7 +1537,7 @@ ol.anexos li{ transition:transform .2s, color .2s; } ol.anexos li:hover{ transfo
     if (e.target.id !== "cuadros") return;
     const c = e.target;
     const ancho = c.querySelector(".cuadro").offsetWidth + 16;
-    const idx = Math.min(4, Math.round(c.scrollLeft / ancho));
+    const idx = Math.min(5, Math.round(c.scrollLeft / ancho));
     document.querySelectorAll("[data-cdot]").forEach((b, i) => b.classList.toggle("on", i === idx));
   }, true);
   app.addEventListener("change", e => {
