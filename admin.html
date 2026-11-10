@@ -145,6 +145,9 @@
   .gate-caja p { color:var(--muted); }
   .gate-caja button { margin-top:12px; }
   html.verificando body > *:not(#gateAcceso) { visibility:hidden !important; }
+  .gate-sep { margin:14px 0 8px; font-size:.85rem; color:var(--muted); }
+  .gate-caja input { display:block; width:100%; margin:6px 0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font:inherit; }
+  .gate-caja .mini { margin:4px 4px 0 0; }
 </style>
 </head>
 <body>
@@ -154,6 +157,11 @@
     <p>Inicia sesión con tu cuenta de Google autorizada.</p>
     <button type="button" class="primario" id="btnGoogle">Entrar con Google</button>
     <button type="button" class="mini" id="btnSalir" hidden>Cambiar de cuenta</button>
+    <div class="gate-sep">o entra con tu correo y contraseña</div>
+    <input id="gateEmail" type="email" placeholder="correo@grarequipa.gob.pe" autocomplete="username">
+    <input id="gatePass" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button type="button" class="mini primario" id="btnCorreo">Entrar con correo</button>
+    <button type="button" class="mini" id="btnOlvido">Olvidé mi contraseña</button>
     <p class="nota" id="gateMsg"></p>
   </div>
 </div>
@@ -611,7 +619,7 @@
           <div id="ajusteFoto" class="ajuste-foto" hidden></div>
           <div class="foto-gestor">
             <div><div class="foto-principal" id="fotoPrincipalVista"><span>Esta institución aún no tiene portada</span></div></div>
-            <div><strong>Fotografías del colegio</strong><p class="foto-editor-ayuda">Sube fotografías o añade enlaces y elige la imagen principal.</p><div id="miniaturas"></div></div>
+            <div><strong>Fotografías del colegio</strong><p class="foto-editor-ayuda">Pega el enlace directo de cada imagen (por ejemplo, de ImgBB) y elige la imagen principal.</p><div id="miniaturas"></div></div>
           </div>
           <div class="fotos-acciones" style="margin-top:10px;display:grid;gap:10px">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1418,52 +1426,68 @@
   }
   // Exporta todo: instituciones (formato de importación), clasificación y personal, matrícula por nivel y personal.
   async function exportarTodo() {
-    if (personalCache === null) await cargarPersonal();
-    const v = x => (x === undefined || x === null) ? "" : x;
-    const si = x => x === true ? "si" : x === false ? "no" : "";
-    const res = (x, k) => x.resumenPersonal?.[k] || "";
-    const hojaI = instituciones.map(x => ({
-      distrito: x.distrito, nombre: x.nombre, tipo: v(x.tipo), codigo: v(x.codigo), direccion: v(x.direccion),
-      zona: v(x.zona), director: v(x.director), estudiantes: v(x.estudiantes), docentes: v(x.docentes),
-      latitud: v(x.latitud), longitud: v(x.longitud), altitud: v(x.altitud),
-      imagenes: (x.imagenes || []).join("; "), info: v(x.info)
-    }));
-    const hojaC = instituciones.map(x => ({
-      distrito: x.distrito, nombre: x.nombre, nivel: v(x.nivel), tipo_ie: v(x.tipoIE), gestion: v(x.gestion),
-      nro_ie: v(x.nroIE), codigos_modulares: (x.codigosModulares || []).join(" · "), anexo: v(x.anexo),
-      zona: v(x.zona), frontera: si(x.frontera), jec: si(x.jec), director: v(x.director), subdirector: v(x.subdirector),
-      docentes: v(x.docentes), administrativos: v(x.administrativos), cas: v(x.cas), estudiantes: v(x.estudiantes),
-      cargos: (x.personalPublico || []).map(c => `${c.cargo}: ${c.cantidad}`).join(" · "),
-      situacion_laboral: res(x, "situacion"), regimen: res(x, "regimen"), jornada: res(x, "jornada"),
-      categoria: res(x, "categoria"), tipo_registro: res(x, "tipoRegistro")
-    }));
-    const hojaM = [];
-    instituciones.forEach(x => (x.matriculaPorNivel || []).forEach(m => hojaM.push({
-      distrito: x.distrito, nombre: x.nombre, codigo_modular: m.codigo, nivel: m.nivel, tipo_ie: v(m.tipoIE),
-      matricula: v(m.matricula), definitiva: v(m.definitiva), en_proceso: v(m.enProceso), grados: v(m.grados)
-    })));
-    const hojaP = (personalCache || []).map(p => ({
-      distrito: v(p.distritoOriginal || p.distrito), institucion: v(p.institucion), apellido_paterno: v(p.apellidoPaterno),
-      apellido_materno: v(p.apellidoMaterno), nombres: v(p.nombres), tipo_trabajador: v(p.tipoTrabajador), cargo: v(p.cargo),
-      situacion_laboral: v(p.situacionLaboral), categoria: v(p.categoria), jornada: v(p.jornada), regimen: v(p.regimen),
-      tipo_registro: v(p.tipoRegistro), codigo_plaza: v(p.codigoPlaza), codigo_personal: v(p.codigoPersona),
-      nivel: v(p.nivelEducativo), tipo_ie: v(p.tipoIE), gestion: v(p.gestion), zona: v(p.zonaOriginal), jec: v(p.jec),
-      visible_en_publico: p.publico !== false ? "si" : "no"
-    }));
-    const wb = XLSX.utils.book_new();
-    const hojaE = [];
-    instituciones.forEach(x => (x.matriculaPorNivel || []).forEach(m => (m.detalle || []).forEach(d => hojaE.push({
-      distrito: x.distrito, nombre: x.nombre, nivel: m.nivel, codigo_modular: m.codigo,
-      grado_o_edad: d.grado, hombres: d.hombres, mujeres: d.mujeres, total: d.total
-    }))));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaI), "Instituciones");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaC), "Clasificacion");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaM), "Matricula");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaE), "Estudiantes por grado");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hojaP), "Personal");
-    const fecha = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `ugel_castilla_exportado_${fecha}.xlsx`);
-    aviso(`Exportado: ${hojaI.length} instituciones, ${hojaM.length} filas de matrícula y ${hojaP.length} de personal.`, true);
+    try {
+      if (personalCache === null) await cargarPersonal();
+      if (typeof XLSX === "undefined") throw new Error("No se cargó la librería de Excel. Recarga la página con Ctrl+F5.");
+      // Convierte cualquier valor en algo que Excel pueda escribir (texto, número o vacío).
+      const limpio = x => {
+        if (x === undefined || x === null) return "";
+        if (x instanceof Date) return x.toISOString().slice(0, 10);
+        if (typeof x === "object" && typeof x.toDate === "function") return x.toDate().toISOString().slice(0, 10);
+        if (Array.isArray(x)) return x.map(limpio).join("; ");
+        if (typeof x === "object") return Object.entries(x).map(([k, v]) => `${k}: ${limpio(v)}`).join(" · ");
+        if (typeof x === "boolean") return x ? "si" : "no";
+        return x;
+      };
+      const filasDe = arr => arr.map(f => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, limpio(v)])));
+      const v = x => (x === undefined || x === null) ? "" : x;
+      const si = x => x === true ? "si" : x === false ? "no" : "";
+      const res = (x, k) => x.resumenPersonal?.[k] || "";
+      const flexTxt = x => Object.entries(x.criteriosFlexibles || {}).flatMap(([cod, c]) => Object.entries(c.grados || {}).map(([g, d]) => `${cod} · ${g}: ${d.n} sección(es) con ${d.minimo}${d.motivo ? " (" + d.motivo + ")" : ""}`)).join(" | ");
+      const hojaI = instituciones.map(x => ({
+        distrito: v(x.distrito), nombre: v(x.nombre), tipo: v(x.tipo), codigo: v(x.codigo), direccion: v(x.direccion),
+        zona: v(x.zona), director: v(x.director), estudiantes: v(x.estudiantes), docentes: v(x.docentes),
+        latitud: v(x.latitud), longitud: v(x.longitud), altitud: v(x.altitud),
+        imagenes: (x.imagenes || []).join("; "), info: v(x.info)
+      }));
+      const hojaC = instituciones.map(x => ({
+        distrito: v(x.distrito), nombre: v(x.nombre), nivel: v(x.nivel), tipo_ie: v(x.tipoIE), gestion: v(x.gestion),
+        nro_ie: v(x.nroIE), codigos_modulares: (x.codigosModulares || []).join(" · "), anexo: v(x.anexo),
+        zona: v(x.zona), frontera: si(x.frontera), jec: si(x.jec), director: v(x.director), subdirector: v(x.subdirector),
+        docentes: v(x.docentes), administrativos: v(x.administrativos), cas: v(x.cas), estudiantes: v(x.estudiantes),
+        cargos: (x.personalPublico || []).map(c => `${c.cargo}: ${c.cantidad}`).join(" · "),
+        situacion_laboral: res(x, "situacion"), regimen: res(x, "regimen"), jornada: res(x, "jornada"),
+        categoria: res(x, "categoria"), tipo_registro: res(x, "tipoRegistro"),
+        criterios_flexibles: flexTxt(x)
+      }));
+      const hojaM = [];
+      instituciones.forEach(x => (x.matriculaPorNivel || []).forEach(m => hojaM.push({
+        distrito: v(x.distrito), nombre: v(x.nombre), codigo_modular: v(m.codigo), nivel: v(m.nivel), tipo_ie: v(m.tipoIE),
+        matricula: v(m.matricula), definitiva: v(m.definitiva), en_proceso: v(m.enProceso), grados: v(m.grados)
+      })));
+      const hojaE = [];
+      instituciones.forEach(x => (x.matriculaPorNivel || []).forEach(m => (m.detalle || []).forEach(d => hojaE.push({
+        distrito: v(x.distrito), nombre: v(x.nombre), nivel: v(m.nivel), codigo_modular: v(m.codigo),
+        grado_o_edad: v(d.grado), secciones: v(d.secciones), hombres: v(d.hombres), mujeres: v(d.mujeres), total: v(d.total)
+      }))));
+      const hojaP = (personalCache || []).map(p => ({
+        distrito: v(p.distritoOriginal || p.distrito), institucion: v(p.institucion), apellido_paterno: v(p.apellidoPaterno),
+        apellido_materno: v(p.apellidoMaterno), nombres: v(p.nombres), tipo_trabajador: v(p.tipoTrabajador), cargo: v(p.cargo),
+        situacion_laboral: v(p.situacionLaboral), categoria: v(p.categoria), jornada: v(p.jornada), regimen: v(p.regimen),
+        tipo_registro: v(p.tipoRegistro), codigo_plaza: v(p.codigoPlaza), codigo_personal: v(p.codigoPersona),
+        nivel: v(p.nivelEducativo), tipo_ie: v(p.tipoIE), gestion: v(p.gestion), zona: v(p.zonaOriginal), jec: v(p.jec),
+        visible_en_publico: p.publico !== false ? "si" : "no"
+      }));
+      const wb = XLSX.utils.book_new();
+      [["Instituciones", hojaI], ["Clasificacion", hojaC], ["Matricula", hojaM], ["Estudiantes por grado", hojaE], ["Personal", hojaP]]
+        .forEach(([nombreHoja, filas]) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filasDe(filas.length ? filas : [{ aviso: "Sin datos" }])), nombreHoja));
+      const fecha = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `ugel_castilla_exportado_${fecha}.xlsx`);
+      aviso(`Exportado: ${hojaI.length} instituciones, ${hojaM.length} filas de matrícula y ${hojaP.length} de personal.`, true);
+    } catch (e) {
+      console.error("Error al exportar:", e);
+      aviso("No se pudo exportar: " + (e && e.message ? e.message : e));
+    }
   }
 
   // Asigna el anexo cuando su nombre aparece en el nombre o la dirección de la institución.
@@ -3155,6 +3179,23 @@
     DR.set = negar; DR.update = negar; DR.delete = negar;
     firebase.firestore.WriteBatch.prototype.commit = negar;
   }
+  // Entrada con correo y contraseña (para cuentas que no son de Google).
+  document.getElementById("btnCorreo").addEventListener("click", async () => {
+    const correo = document.getElementById("gateEmail").value.trim();
+    const clave = document.getElementById("gatePass").value;
+    msg.textContent = "";
+    if (!correo || !clave) { msg.textContent = "Escribe tu correo y tu contraseña."; return; }
+    entroPorBoton = true;
+    try { await auth.signInWithEmailAndPassword(correo, clave); }
+    catch (e) { msg.textContent = "No se pudo entrar con ese correo y contraseña. Revisa los datos o usa \"Olvidé mi contraseña\"."; entroPorBoton = false; }
+  });
+  document.getElementById("btnOlvido").addEventListener("click", async () => {
+    const correo = document.getElementById("gateEmail").value.trim();
+    msg.textContent = "";
+    if (!correo) { msg.textContent = "Escribe primero tu correo."; return; }
+    try { await auth.sendPasswordResetEmail(correo); msg.textContent = "Te enviamos un correo para crear o cambiar tu contraseña. Revisa tu bandeja de entrada."; }
+    catch (e) { msg.textContent = "No se pudo enviar el correo: " + e.message; }
+  });
   document.getElementById("btnSalir").addEventListener("click", async () => {
     await auth.signOut();
     msg.textContent = "Elige la cuenta con la que quieres entrar.";
