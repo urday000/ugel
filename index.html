@@ -1432,6 +1432,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   .pg-tabla tr[hidden] { display:none; }
   .pg-tabla tbody tr:hover { background:#f4faf6; }
   @media(max-width:640px) { .pg-tabla { max-height:80vh; min-height:50vh; } }
+  .link-ie { background:none; border:0; padding:0; color:var(--accent-2,#0b5c3a); font:inherit; font-weight:700; cursor:pointer; text-align:left; text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -1440,6 +1441,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   <button type="button" data-nav="inicio" class="on">Inicio</button>
   <button type="button" data-nav="mapa">Mapa de instituciones</button>
   <button type="button" data-nav="personal">Personal general</button>
+  <button type="button" data-nav="analisisGeneral">Análisis general</button>
   <button type="button" data-nav="actualizar">↻ Actualizar datos</button>
   <a href="admin.html" id="btnUsuarios" class="btn-usuarios" role="button">Usuarios</a>
 </nav>
@@ -2125,6 +2127,79 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   }
   app.addEventListener("input", e => { if (e.target.id === "pgBuscar") aplicarPersonalGeneral(); });
   app.addEventListener("change", e => { if (["pgDistrito", "pgNivel", "pgCat"].includes(e.target.id)) aplicarPersonalGeneral(); });
+  // ---------- Análisis general: resumen del análisis de todas las IE ----------
+  // Usa la misma ficha de cada IE y toma su pestaña 6 (Resumen), para que los números coincidan con la ficha.
+  function resumenDeIE(i) {
+    const prevRac = estado.racNivel;
+    estado.racNivel = null;
+    let html = "";
+    try { html = vistaFicha(i); } finally { estado.racNivel = prevRac; }
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const colores = ["verde", "amarillo", "rojo", "gris"];
+    const cuenta = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+    const grados = [];
+    const sec6 = div.querySelectorAll(".cuadro")[5];
+    if (sec6) {
+      sec6.querySelectorAll(".rac-resumen-total .rac-pill").forEach(p => {
+        const k = colores.find(c => p.classList.contains(c));
+        if (k) cuenta[k] = Number((p.textContent.match(/\d+/) || [0])[0]);
+      });
+      sec6.querySelectorAll("tbody tr").forEach(tr => {
+        const td = tr.querySelectorAll("td");
+        if (td.length < 4) return;
+        const pill = td[2].querySelector(".rac-pill");
+        const color = (pill && colores.find(c => pill.classList.contains(c))) || "gris";
+        grados.push({ nivel: td[0].textContent, grado: td[1].textContent, color, alcance: td[3].textContent });
+      });
+    }
+    return { cuenta, grados };
+  }
+  function vistaAnalisisGeneral() {
+    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
+    const datos = lista.map(x => ({ ...x, r: resumenDeIE(x.i) }));
+    const tot = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+    datos.forEach(d => ["verde", "amarillo", "rojo", "gris"].forEach(k => { tot[k] += d.r.cuenta[k] || 0; }));
+    const distritos = [...new Set(lista.map(x => x.ie.distrito).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+    const opts = `<option value="">Todos los distritos</option>` + distritos.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    const filas = datos.map(d => `<tr data-txt="${esc(sinTildes(`${d.ie.nombre} ${d.ie.distrito || ""} ${d.ie.codigo || ""}`))}" data-dis="${esc(d.ie.distrito || "")}">
+        <td><button type="button" class="link-ie" data-ie="${d.i}">${esc(d.ie.nombre)}</button></td>
+        <td>${esc(d.ie.distrito || "")}</td>
+        <td><span class="rac-pill verde">${d.r.cuenta.verde}</span></td>
+        <td><span class="rac-pill amarillo">${d.r.cuenta.amarillo}</span></td>
+        <td><span class="rac-pill rojo">${d.r.cuenta.rojo}</span></td>
+        <td><span class="rac-pill gris">${d.r.cuenta.gris}</span></td>
+        <td>${d.r.grados.length}</td></tr>`).join("");
+    return `<div class="pg-barra">
+        <input id="agBuscar" type="search" placeholder="Buscar institución, código o distrito…">
+        <select id="agDistrito">${opts}</select>
+        <span class="pg-conteo" id="agConteo">${lista.length} instituciones</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">
+        <span class="rac-pill verde">Verde ${tot.verde}</span><span class="rac-pill amarillo">Amarillo ${tot.amarillo}</span>
+        <span class="rac-pill rojo">Rojo ${tot.rojo}</span><span class="rac-pill gris">Gris ${tot.gris}</span>
+      </div>
+      <div class="pg-tabla"><table>
+        <thead><tr><th>Institución</th><th>Distrito</th><th>Verde</th><th>Amarillo</th><th>Rojo</th><th>Gris</th><th>Grados</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="7">Todavía no hay instituciones para analizar.</td></tr>`}</tbody>
+      </table></div>
+      <p class="nota">Cada número cuenta los grados de la institución con ese resultado. Pulsa el nombre para ver su ficha.</p>`;
+  }
+  function aplicarAnalisisGeneral() {
+    const q = sinTildes(document.getElementById("agBuscar")?.value || "").trim();
+    const dis = document.getElementById("agDistrito")?.value || "";
+    const filas = document.querySelectorAll(".pg-tabla tbody tr[data-txt]");
+    let vis = 0;
+    filas.forEach(tr => {
+      const ok = (!q || tr.dataset.txt.includes(q)) && (!dis || tr.dataset.dis === dis);
+      tr.hidden = !ok;
+      if (ok) vis++;
+    });
+    const c = document.getElementById("agConteo");
+    if (c) c.textContent = `${vis} de ${filas.length} instituciones`;
+  }
+  app.addEventListener("input", e => { if (e.target.id === "agBuscar") aplicarAnalisisGeneral(); });
+  app.addEventListener("change", e => { if (e.target.id === "agDistrito") aplicarAnalisisGeneral(); });
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
@@ -2134,6 +2209,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     else if (v.tipo === "distrito") app.innerHTML = vistaDistrito(v.clave);
     else if (v.tipo === "mapa") { app.innerHTML = vistaMapa(); iniciarMapa(); }
     else if (v.tipo === "personal") app.innerHTML = vistaPersonalGeneral();
+    else if (v.tipo === "analisisGeneral") app.innerHTML = vistaAnalisisGeneral();
     else app.innerHTML = vistaFicha(v.i);
     if (v.tipo === "home") pintarResultados();
     if (v.tipo === "distrito") pintarGruposDistrito();
@@ -2239,6 +2315,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     if (accion === "inicio") { estado.pila = [{ tipo:"home" }]; estado.foto = 0; pintar(); }
     else if (accion === "mapa") { if (estado.pila[estado.pila.length - 1].tipo !== "mapa") ir({ tipo:"mapa" }); }
     else if (accion === "personal") { if (estado.pila[estado.pila.length - 1].tipo !== "personal") ir({ tipo:"personal" }); }
+    else if (accion === "analisisGeneral") { if (estado.pila[estado.pila.length - 1].tipo !== "analisisGeneral") ir({ tipo:"analisisGeneral" }); }
     else if (accion === "actualizar") { fuente = "Actualizando…"; pintar(); cargarDatos(); cargarPortada(); }
   });
 
