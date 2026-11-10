@@ -1433,6 +1433,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   .pg-tabla tbody tr:hover { background:#f4faf6; }
   @media(max-width:640px) { .pg-tabla { max-height:80vh; min-height:50vh; } }
   .link-ie { background:none; border:0; padding:0; color:var(--accent-2,#0b5c3a); font:inherit; font-weight:700; cursor:pointer; text-align:left; text-decoration:underline; }
+  .niv-chip { display:inline-flex; align-items:center; gap:4px; margin:2px 8px 2px 0; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -2004,6 +2005,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
             </div>
           </div>
         </section>
+        <div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button type="button" class="mini primario" data-excel-ie="${i}">⬇ Descargar Excel de esta IE</button></div>
         ${carrusel}
         <div class="cuerpo">
           <div class="cuadros-barra">
@@ -2104,6 +2106,7 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
         <select id="pgNivel">${opts(niveles, "Todos los niveles")}</select>
         <select id="pgCat">${opts(cats, "Todas las categorías")}</select>
         <span class="pg-conteo" id="pgConteo">${filas.length} registros</span>
+        <button type="button" class="mini" data-excel-personal="1">⬇ Excel</button>
       </div>
       <div class="pg-tabla"><table>
         <thead><tr><th>Institución</th><th>Distrito</th><th>Nivel</th><th>Código de plaza</th><th>Apellidos y nombres</th><th>Cargo</th><th>Situación</th><th>Categoría</th><th>Jornada</th></tr></thead>
@@ -2127,6 +2130,54 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   }
   app.addEventListener("input", e => { if (e.target.id === "pgBuscar") aplicarPersonalGeneral(); });
   app.addEventListener("change", e => { if (["pgDistrito", "pgNivel", "pgCat"].includes(e.target.id)) aplicarPersonalGeneral(); });
+  // ---------- Descargas a Excel ----------
+  function excelDescargar(nombreArchivo, hojas) {
+    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
+    const wb = XLSX.utils.book_new();
+    hojas.forEach(h => {
+      const filas = h.filas.length ? h.filas : [{ aviso: "Sin datos" }];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), h.nombre);
+    });
+    XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  // Ficha de una IE: identificación, matrícula, personal visible y análisis por grado.
+  function fichaExcel(i) {
+    const ie = todas[i];
+    if (!ie) return;
+    const sn = v => (v === undefined || v === null) ? "" : v;
+    const ident = [
+      ["Nombre", ie.nombre], ["Distrito", ie.distrito], ["Dirección", ie.direccion], ["Zona", ie.zona],
+      ["Gestión", ie.gestion], ["Tipo de I.E.", ie.tipoIE], ["Condición", ie.condicion], ["Director", ie.director],
+      ["Subdirector", ie.subdirector], ["Códigos modulares", (ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" · ") || (ie.codigosModulares || []).join(" · ")],
+      ["Estudiantes", sn(ie.estudiantes)], ["Docentes (ficha)", sn(ie.docentes)], ["Latitud", sn(ie.latitud)], ["Longitud", sn(ie.longitud)]
+    ].map(([campo, valor]) => ({ campo, valor: sn(valor) }));
+    const matricula = [];
+    (ie.matriculaPorNivel || []).forEach(m => (m.detalle || []).forEach(d => matricula.push({
+      nivel: sn(m.nivel), codigo: sn(m.codigo), grado_o_edad: sn(d.grado), secciones: sn(d.secciones),
+      hombres: sn(d.hombres), mujeres: sn(d.mujeres), total: sn(d.total)
+    })));
+    const pers = (typeof personalVisible !== "undefined" ? personalVisible : []).filter(p => ie.claveUGEL && p.claveUGEL === ie.claveUGEL).map(p => ({
+      codigo_plaza: sn(p.codigoPlaza), codigo_personal: sn(p.codigoPersona), apellidos_nombres: sn(p.nombreCompleto),
+      cargo: sn(p.cargo), nivel: sn(p.nivelEducativo), situacion: sn(p.situacionLaboral), categoria: sn(p.categoria),
+      jornada: sn(p.jornada), regimen: sn(p.regimen)
+    }));
+    const r = resumenDeIE(i);
+    const analisis = r.grados.map(g => ({ nivel: g.nivel, grado: g.grado, resultado: g.color, alcance: g.alcance }));
+    analisis.push({ nivel: "TOTAL", grado: "", resultado: `Verde ${r.cuenta.verde} · Amarillo ${r.cuenta.amarillo} · Rojo ${r.cuenta.rojo} · Gris ${r.cuenta.gris}`, alcance: "" });
+    excelDescargar("IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40), [
+      { nombre: "Identificación", filas: ident }, { nombre: "Matrícula por grado", filas: matricula },
+      { nombre: "Personal visible", filas: pers }, { nombre: "Análisis", filas: analisis }
+    ]);
+  }
+  function personalGeneralExcel() {
+    const pv = Array.isArray(personalVisible) ? personalVisible : [];
+    excelDescargar("Personal_general", [{ nombre: "Personal visible", filas: pv.map(p => ({
+      institucion: nombreIEPersonal(p), distrito: sn2(p.distritoOriginal || p.distrito), nivel: sn2(p.nivelEducativo),
+      codigo_plaza: sn2(p.codigoPlaza), codigo_personal: sn2(p.codigoPersona), apellidos_nombres: sn2(p.nombreCompleto),
+      cargo: sn2(p.cargo), situacion: sn2(p.situacionLaboral), categoria: sn2(p.categoria), jornada: sn2(p.jornada), regimen: sn2(p.regimen)
+    })) }]);
+  }
+  function sn2(v) { return (v === undefined || v === null) ? "" : v; }
   // ---------- Análisis general: resumen del análisis de todas las IE ----------
   // Usa la misma ficha de cada IE y toma su pestaña 6 (Resumen), para que los números coincidan con la ficha.
   function resumenDeIE(i) {
@@ -2155,43 +2206,64 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     }
     return { cuenta, grados };
   }
+  // Agrupa los grados de una IE por nivel educativo (Inicial, Primaria, Secundaria).
+  function nivelSimpleAG(n) {
+    const u = sinTildes(n || "");
+    if (u.includes("inicial")) return "Inicial";
+    if (u.includes("primaria")) return "Primaria";
+    if (u.includes("secundaria")) return "Secundaria";
+    return "Otro";
+  }
+  function porNivelAG(grados) {
+    const mapa = {};
+    grados.forEach(g => {
+      const k = nivelSimpleAG(g.nivel);
+      if (!mapa[k]) mapa[k] = { nivel: k, verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+      mapa[k][g.color] = (mapa[k][g.color] || 0) + 1;
+    });
+    return Object.values(mapa).sort((a, b) => ["Inicial", "Primaria", "Secundaria", "Otro"].indexOf(a.nivel) - ["Inicial", "Primaria", "Secundaria", "Otro"].indexOf(b.nivel));
+  }
   function vistaAnalisisGeneral() {
     const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
-    const datos = lista.map(x => ({ ...x, r: resumenDeIE(x.i) }));
+    const datos = lista.map(x => { const r = resumenDeIE(x.i); return { ...x, r, niv: porNivelAG(r.grados) }; });
     const tot = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
     datos.forEach(d => ["verde", "amarillo", "rojo", "gris"].forEach(k => { tot[k] += d.r.cuenta[k] || 0; }));
     const distritos = [...new Set(lista.map(x => x.ie.distrito).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
     const opts = `<option value="">Todos los distritos</option>` + distritos.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join("");
-    const filas = datos.map(d => `<tr data-txt="${esc(sinTildes(`${d.ie.nombre} ${d.ie.distrito || ""} ${d.ie.codigo || ""}`))}" data-dis="${esc(d.ie.distrito || "")}">
+    const filas = datos.map(d => {
+      const niveles = d.niv.map(n => n.nivel).join(" ");
+      const chips = d.niv.map(n => `<span class="niv-chip"><b>${esc(n.nivel)}</b> <span class="rac-pill verde">${n.verde}</span><span class="rac-pill amarillo">${n.amarillo}</span><span class="rac-pill rojo">${n.rojo}</span><span class="rac-pill gris">${n.gris}</span></span>`).join("");
+      return `<tr data-txt="${esc(sinTildes(`${d.ie.nombre} ${d.ie.distrito || ""} ${d.ie.codigo || ""} ${niveles}`))}" data-dis="${esc(d.ie.distrito || "")}" data-niv="${esc(niveles)}">
         <td><button type="button" class="link-ie" data-ie="${d.i}">${esc(d.ie.nombre)}</button></td>
         <td>${esc(d.ie.distrito || "")}</td>
-        <td><span class="rac-pill verde">${d.r.cuenta.verde}</span></td>
-        <td><span class="rac-pill amarillo">${d.r.cuenta.amarillo}</span></td>
-        <td><span class="rac-pill rojo">${d.r.cuenta.rojo}</span></td>
-        <td><span class="rac-pill gris">${d.r.cuenta.gris}</span></td>
-        <td>${d.r.grados.length}</td></tr>`).join("");
+        <td>${chips || "—"}</td>
+        <td>${d.r.grados.length}</td></tr>`;
+    }).join("");
     return `<div class="pg-barra">
         <input id="agBuscar" type="search" placeholder="Buscar institución, código o distrito…">
         <select id="agDistrito">${opts}</select>
+        <select id="agNivel"><option value="">Todos los niveles</option><option value="Inicial">Inicial</option><option value="Primaria">Primaria</option><option value="Secundaria">Secundaria</option></select>
         <span class="pg-conteo" id="agConteo">${lista.length} instituciones</span>
+        <button type="button" class="mini" data-excel-analisis="1">⬇ Excel</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">
         <span class="rac-pill verde">Verde ${tot.verde}</span><span class="rac-pill amarillo">Amarillo ${tot.amarillo}</span>
         <span class="rac-pill rojo">Rojo ${tot.rojo}</span><span class="rac-pill gris">Gris ${tot.gris}</span>
       </div>
       <div class="pg-tabla"><table>
-        <thead><tr><th>Institución</th><th>Distrito</th><th>Verde</th><th>Amarillo</th><th>Rojo</th><th>Gris</th><th>Grados</th></tr></thead>
-        <tbody>${filas || `<tr><td colspan="7">Todavía no hay instituciones para analizar.</td></tr>`}</tbody>
+        <thead><tr><th>Institución</th><th>Distrito</th><th>Nivel educativo (verde · amarillo · rojo · gris)</th><th>Grados</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="4">Todavía no hay instituciones para analizar.</td></tr>`}</tbody>
       </table></div>
-      <p class="nota">Cada número cuenta los grados de la institución con ese resultado. Pulsa el nombre para ver su ficha.</p>`;
+      <p class="nota">Cada número cuenta los grados del nivel con ese resultado. Pulsa el nombre para ver su ficha.</p>`;
   }
   function aplicarAnalisisGeneral() {
     const q = sinTildes(document.getElementById("agBuscar")?.value || "").trim();
     const dis = document.getElementById("agDistrito")?.value || "";
+    const niv = document.getElementById("agNivel")?.value || "";
     const filas = document.querySelectorAll(".pg-tabla tbody tr[data-txt]");
     let vis = 0;
     filas.forEach(tr => {
-      const ok = (!q || tr.dataset.txt.includes(q)) && (!dis || tr.dataset.dis === dis);
+      const ok = (!q || tr.dataset.txt.includes(q)) && (!dis || tr.dataset.dis === dis) && (!niv || tr.dataset.niv.split(" ").includes(niv));
       tr.hidden = !ok;
       if (ok) vis++;
     });
@@ -2199,7 +2271,18 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     if (c) c.textContent = `${vis} de ${filas.length} instituciones`;
   }
   app.addEventListener("input", e => { if (e.target.id === "agBuscar") aplicarAnalisisGeneral(); });
-  app.addEventListener("change", e => { if (e.target.id === "agDistrito") aplicarAnalisisGeneral(); });
+  app.addEventListener("change", e => { if (e.target.id === "agDistrito" || e.target.id === "agNivel") aplicarAnalisisGeneral(); });
+  function analisisGeneralExcel() {
+    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
+    const resumen = [], detalle = [];
+    lista.forEach(x => {
+      const r = resumenDeIE(x.i);
+      const niv = porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ");
+      resumen.push({ institucion: sn2(x.ie.nombre), distrito: sn2(x.ie.distrito), niveles: niv, verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length });
+      r.grados.forEach(g => detalle.push({ institucion: sn2(x.ie.nombre), distrito: sn2(x.ie.distrito), nivel: g.nivel, grado: g.grado, resultado: g.color, alcance: g.alcance }));
+    });
+    excelDescargar("Analisis_general", [{ nombre: "Resumen por IE", filas: resumen }, { nombre: "Detalle por grado", filas: detalle }]);
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
@@ -2366,6 +2449,9 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
       }
       return;
     }
+    if (b.dataset.excelIe !== undefined) { fichaExcel(Number(b.dataset.excelIe)); return; }
+    if (b.dataset.excelPersonal !== undefined) { personalGeneralExcel(); return; }
+    if (b.dataset.excelAnalisis !== undefined) { analisisGeneralExcel(); return; }
     if (b.dataset.racNivel !== undefined) { estado.racNivel = b.dataset.racNivel; pintar(); irAnalisis(); return; }
     if (b.dataset.racTodos !== undefined) { estado.racNivel = null; pintar(); irAnalisis(); return; }
     if (b.dataset.foto !== undefined) { estado.foto = Number(b.dataset.foto); pintar(); }
@@ -2654,5 +2740,6 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
  observer.observe(app,{childList:true,subtree:true});
 })();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 </html>
