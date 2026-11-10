@@ -1425,12 +1425,13 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   .pg-barra input[type=search] { flex:1; min-width:240px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font:inherit; }
   .pg-barra select { padding:10px 12px; border:1px solid var(--border); border-radius:12px; font:inherit; background:var(--surface,#fff); }
   .pg-conteo { color:var(--muted); font-size:.92rem; white-space:nowrap; }
-  .pg-tabla { overflow:auto; max-height:70vh; border:1px solid var(--border); border-radius:14px; background:var(--surface,#fff); }
+  .pg-tabla { overflow:auto; max-height:88vh; min-height:60vh; border:1px solid var(--border); border-radius:14px; background:var(--surface,#fff); }
   .pg-tabla table { width:100%; min-width:1000px; border-collapse:collapse; font-size:.95rem; }
   .pg-tabla th, .pg-tabla td { padding:11px 14px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); }
   .pg-tabla th { position:sticky; top:0; background:#f6f9fc; color:var(--accent-2,#0b5c3a); z-index:1; white-space:nowrap; }
   .pg-tabla tr[hidden] { display:none; }
   .pg-tabla tbody tr:hover { background:#f4faf6; }
+  @media(max-width:640px) { .pg-tabla { max-height:80vh; min-height:50vh; } }
 </style>
 </head>
 <body>
