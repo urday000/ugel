@@ -2444,6 +2444,62 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     });
     excelDescargar("Analisis_general", [{ nombre: "Resumen por IE", titulo: "Resumen del análisis por institución", filas: resumen }, { nombre: "Detalle por grado", titulo: "Análisis por grado de todas las instituciones", filas: detalle }]);
   }
+  // Estudiantes completos: por grado, subtotal por nivel, total de la IE y resumen de hombres y mujeres.
+  function estudiantesIE(ie) {
+    const num = v => Number(v) || 0;
+    const totales = [], grados = [];
+    let gH = 0, gM = 0, gT = 0, gS = 0;
+    (ie.matriculaPorNivel || []).forEach(m => {
+      const det = m.detalle || [];
+      const H = det.reduce((s, d) => s + num(d.hombres), 0);
+      const M = det.reduce((s, d) => s + num(d.mujeres), 0);
+      const T = det.reduce((s, d) => s + num(d.total), 0) || (H + M);
+      const S = det.reduce((s, d) => s + num(d.secciones), 0);
+      gH += H; gM += M; gT += T; gS += S;
+      det.forEach(d => grados.push({
+        nivel: xlsValor(m.nivel), codigo_modular: xlsValor(m.codigo), grado_o_edad: xlsValor(d.grado),
+        secciones: num(d.secciones), hombres: num(d.hombres), mujeres: num(d.mujeres), total: num(d.total) || (num(d.hombres) + num(d.mujeres))
+      }));
+      grados.push({ nivel: "TOTAL " + xlsValor(m.nivel), codigo_modular: xlsValor(m.codigo), grado_o_edad: "Subtotal del nivel", secciones: S, hombres: H, mujeres: M, total: T });
+      totales.push({
+        nivel: xlsValor(m.nivel), codigo_modular: xlsValor(m.codigo), grados_con_datos: det.length, secciones: S,
+        hombres: H, mujeres: M, total_estudiantes: T, matricula_registrada: num(m.matricula) || T,
+        en_proceso: xlsValor(m.enProceso), definitiva: xlsValor(m.definitiva)
+      });
+    });
+    grados.push({ nivel: "TOTAL DE LA IE", codigo_modular: "", grado_o_edad: "Total general", secciones: gS, hombres: gH, mujeres: gM, total: gT });
+    totales.push({ nivel: "TOTAL DE LA IE", codigo_modular: "", grados_con_datos: "", secciones: gS, hombres: gH, mujeres: gM, total_estudiantes: gT, matricula_registrada: num(ie.estudiantes) || gT, en_proceso: "", definitiva: "" });
+    const pct = (parte, total) => total ? `${((parte / total) * 100).toFixed(1)} %` : "";
+    const resumen = [
+      { concepto: "Hombres", valor: gH },
+      { concepto: "Mujeres", valor: gM },
+      { concepto: "Total de estudiantes (suma de grados)", valor: gT },
+      { concepto: "Total de estudiantes registrado en la ficha", valor: num(ie.estudiantes) },
+      { concepto: "Diferencia entre ambos totales", valor: num(ie.estudiantes) - gT },
+      { concepto: "Total de secciones", valor: gS },
+      { concepto: "Porcentaje de hombres", valor: pct(gH, gT) },
+      { concepto: "Porcentaje de mujeres", valor: pct(gM, gT) },
+      { concepto: "Niveles con matrícula", valor: (ie.matriculaPorNivel || []).map(m => xlsValor(m.nivel)).join(" · ") }
+    ];
+    return { totales, grados, resumen };
+  }
+  function excelSeccion(i, tipo) {
+    const ie = todas[i];
+    if (!ie) return;
+    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
+    const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
+    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
+    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
+    if (tipo === "estudiantes") {
+      const e = estudiantesIE(ie);
+      return excelDescargar(base + "_estudiantes", [
+        { nombre: "Resumen", titulo: titulo + " · Hombres y mujeres", filas: e.resumen },
+        { nombre: "Totales por nivel", titulo, filas: e.totales },
+        { nombre: "Estudiantes por grado", titulo, filas: e.grados }
+      ]);
+    }
+    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo, filas: analisisFilasIE(ie, i) }]);
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
