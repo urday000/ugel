@@ -2500,6 +2500,67 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     }
     if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo, filas: analisisFilasIE(ie, i) }]);
   }
+  // Matrícula en el mismo formato del Excel de la UGEL: una fila por institución y nivel,
+  // con hombres y mujeres de cada grado o edad, y una fila de totales.
+  function matriculaFormatoUGEL(ie) {
+    const num = v => Number(v) || 0;
+    const niveles = ie.matriculaPorNivel || [];
+    const etiquetas = [];
+    niveles.forEach(m => (m.detalle || []).forEach(d => { const e = String(d.grado); if (!etiquetas.includes(e)) etiquetas.push(e); }));
+    const filas = niveles.map(m => {
+      const fila = {
+        distrito: ie.distrito || "", centro_poblado: ie.anexo || "", codigo_modular: m.codigo || "",
+        nombre_ie: ie.nombre || "", nivel: m.nivel || "", tipo_ie: ie.tipoIE || "",
+        total_estudiantes: num(m.matricula), matricula_definitiva: num(m.definitiva), matricula_en_proceso: num(m.enProceso),
+        total_grados: num(m.grados), total_secciones: num(m.secciones) || (m.detalle || []).reduce((s, d) => s + num(d.secciones), 0)
+      };
+      etiquetas.forEach(e => {
+        const d = (m.detalle || []).find(x => String(x.grado) === e);
+        fila[`${e} H`] = d ? num(d.hombres) : 0;
+        fila[`${e} M`] = d ? num(d.mujeres) : 0;
+      });
+      return fila;
+    });
+    if (filas.length) {
+      const claves = Object.keys(filas[0]);
+      const total = { distrito: "TOTAL", centro_poblado: "", codigo_modular: "", nombre_ie: "", nivel: "", tipo_ie: "" };
+      claves.forEach(k => { if (typeof filas[0][k] === "number") total[k] = filas.reduce((s, f) => s + (f[k] || 0), 0); });
+      filas.push(total);
+    }
+    return filas;
+  }
+  function excelSeccion(i, tipo) {
+    const ie = todas[i];
+    if (!ie) return;
+    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
+    const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
+    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
+    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
+    if (tipo === "estudiantes") {
+      const e = estudiantesIE(ie);
+      return excelDescargar(base + "_estudiantes", [
+        { nombre: "Matrícula formato UGEL", titulo, filas: matriculaFormatoUGEL(ie) },
+        { nombre: "Resumen H y M", titulo, filas: e.resumen },
+        { nombre: "Por grado", titulo, filas: e.grados }
+      ]);
+    }
+    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo, filas: analisisFilasIE(ie, i) }]);
+  }
+  function analisisGeneralExcel() {
+    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
+    const resumen = [], detalle = [], matricula = [];
+    lista.forEach(x => {
+      const r = resumenDeIE(x.i);
+      resumen.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), codigo: xlsValor(x.ie.codigo), verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length, niveles: porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ") });
+      analisisFilasIE(x.ie, x.i).forEach(f => detalle.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), ...f }));
+      matriculaFormatoUGEL(x.ie).forEach(f => { if (f.distrito !== "TOTAL") matricula.push(f); });
+    });
+    excelDescargar("Analisis_general", [
+      { nombre: "Resumen por IE", titulo: "Resumen del análisis por institución", filas: resumen },
+      { nombre: "Detalle por grado", titulo: "Análisis por grado de todas las instituciones", filas: detalle },
+      { nombre: "Matrícula formato UGEL", titulo: "Matrícula de todas las instituciones (formato UGEL)", filas: matricula }
+    ]);
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
