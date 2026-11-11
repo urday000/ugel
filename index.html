@@ -2561,6 +2561,53 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
       { nombre: "Matrícula formato UGEL", titulo: "Matrícula de todas las instituciones (formato UGEL)", filas: matricula }
     ]);
   }
+  // Matrícula con el formato oficial de cada nivel:
+  // Inicial: hombres y mujeres por edad. Primaria y Secundaria: secciones, hombres y mujeres por grado.
+  function modalidadTextoMat(m, ie) {
+    if (m.modalidad) return m.modalidad;
+    const c = modalidadDe ? modalidadDe(m.nivel) : "";
+    return { EBR: "Educación Básica Regular", EBA: "Educación Básica Alternativa", EBE: "Educación Básica Especial", ETP: "Educación Técnico Productiva", UGEL: "" }[c] || "";
+  }
+  function tipoIEMatricula(ie) {
+    const g = String(ie.gestion || "").toUpperCase();
+    if (g.includes("ESTATAL")) return "A1 - Pública - Sector Educación";
+    if (g.includes("PRIVAD")) return "B5 - Privada - Fiscal";
+    return ie.gestion || "";
+  }
+  function matriculaFormatoUGEL(ie) {
+    const num = v => Number(v) || 0;
+    const niveles = ie.matriculaPorNivel || [];
+    const etiquetas = [];
+    niveles.forEach(m => (m.detalle || []).forEach(d => { const e = String(d.grado); if (!etiquetas.includes(e)) etiquetas.push(e); }));
+    const esInicial = m => sinTildes(m.nivel || "").includes("inicial");
+    const filas = niveles.map(m => {
+      const fila = {
+        dre: "DRE Arequipa", ugel: "UGEL Castilla", departamento: "AREQUIPA", provincia: "CASTILLA",
+        distrito: ie.distrito || "", centro_poblado: m.centroPoblado || ie.anexo || "", codigo_modular: m.codigo || "",
+        nombre_ie: ie.nombre || "", nivel: m.nivel || "", modalidad: modalidadTextoMat(m, ie), tipo_ie: tipoIEMatricula(ie),
+        total_estudiantes: num(m.matricula), matricula_definitiva: num(m.definitiva), matricula_en_proceso: num(m.enProceso),
+        total_grados: num(m.grados), total_secciones: num(m.secciones) || (m.detalle || []).reduce((s, d) => s + num(d.secciones), 0),
+        tipo_ie_rvm: ie.tipoIE || ""
+      };
+      etiquetas.forEach(e => {
+        const d = (m.detalle || []).find(x => String(x.grado) === e);
+        if (!esInicial(m)) fila[`${e} Cant Sec`] = d ? num(d.secciones) : "";
+        fila[`${e} Hombres`] = d ? num(d.hombres) : "";
+        fila[`${e} Mujeres`] = d ? num(d.mujeres) : "";
+      });
+      return fila;
+    });
+    if (filas.length) {
+      const total = { dre: "TOTAL", ugel: "", departamento: "", provincia: "", distrito: "", centro_poblado: "", codigo_modular: "", nombre_ie: "", nivel: "", modalidad: "", tipo_ie: "", tipo_ie_rvm: "" };
+      Object.keys(filas[0]).forEach(k => {
+        if (k in total) return;
+        const suma = filas.reduce((s, f) => s + (typeof f[k] === "number" ? f[k] : 0), 0);
+        total[k] = suma;
+      });
+      filas.push(total);
+    }
+    return filas;
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");

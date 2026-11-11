@@ -1560,6 +1560,7 @@
     const cDist = col("distrito"), cCod = col("codMod"), cNom = col("nombreIE"), cNiv = col("nivel"), cTipo = col("tipoIE"),
           cTot = col("total"), cDef = col("definitiva"), cProc = col("enProceso"), cGr = col("grados");
     const cSecc = col("secciones");
+    const cCP = col("centroPoblado"), cMod = col("modalidad");
     const colsGrado = [];
     let labActual = "";
     const subHdr = filas[h + 1] || [];
@@ -1602,7 +1603,7 @@
         porGrado.set(cg.lab, d);
       });
       g.niveles.push({
-        nivel: nivelCorto, codigo: cod, tipoIE: "",
+        nivel: nivelCorto, codigo: cod, tipoIE: "", centroPoblado: arreglarTexto(r[cCP]), modalidad: arreglarTexto(r[cMod]),
         matricula: Number(r[cTot]) || 0, definitiva: Number(r[cDef]) || 0,
         enProceso: Number(r[cProc]) || 0, grados: Number(r[cGr]) || 0,
         secciones: Number(r[cSecc]) || 0,
@@ -2485,26 +2486,62 @@
         </div>
       </form>
       <div class="panel" style="margin:0">
-        <h3>Vista previa</h3>
-        <div style="position:relative;overflow:hidden;border-radius:18px;padding:28px;min-height:${Math.min(520, Math.max(300, Number(c.altura) || 520)) * 0.6}px;background:${esc(c.colorPrincipal)};color:#fff">
+        <h3>Vista previa <small style="color:var(--muted);font-weight:400">(se actualiza mientras escribes)</small></h3>
+        <div id="portadaVista">${vistaPortadaHtml(c)}</div>
+      </div>
+      </div>`;
+  }
+  // Vista previa de la portada con los valores del formulario (sin guardar).
+  function vistaPortadaHtml(c) {
+    const lum = hex => { const h = String(hex || "#000000").replace("#", ""); const n = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255); return 0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]; };
+    const claro = lum(c.colorPrincipal) > 0.6;
+    const alturaVista = Math.min(520, Math.max(300, Number(c.altura) || 520)) * 0.6;
+    return `<div style="position:relative;overflow:hidden;border-radius:18px;padding:28px;min-height:${alturaVista}px;background:${esc(c.colorPrincipal)};color:#fff">
           ${c.fondo ? `<div style="position:absolute;inset:0;background:url('${esc(c.fondo)}') center/cover"></div>` : ""}
           <div style="position:absolute;inset:0;background:${esc(c.colorPrincipal)};opacity:${Math.min(1, Math.max(0, Number(c.fondoOpacidad) / 100))}"></div>
           <div style="position:relative">
             ${c.eyebrow ? `<span style="display:inline-block;background:rgba(255,255,255,.14);padding:5px 10px;border-radius:999px;font-size:.8rem">${esc(c.eyebrow)}</span>` : ""}
             <h2 style="color:#fff;font-size:1.7rem;margin:14px 0 8px">${esc(c.titulo)}</h2>
             <p style="color:#e2eee5;margin:0">${esc(c.subtitulo)}</p>
+            ${c.lema ? `<p style="color:#f5d86b;font-weight:800;margin:10px 0 0">${esc(c.lema)}</p>` : ""}
             ${c.mostrarBotones ? `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
               ${c.boton1Texto ? `<span style="background:${esc(c.colorAcento)};color:#1c170b;padding:8px 12px;border-radius:10px;font-weight:700">${esc(c.boton1Texto)}</span>` : ""}
               ${c.boton2Texto ? `<span style="background:rgba(255,255,255,.12);padding:8px 12px;border-radius:10px;font-weight:700">${esc(c.boton2Texto)}</span>` : ""}
             </div>` : ""}
           </div>
         </div>
-      </div>
-      </div>`;
+        ${claro ? `<p class="nota" style="color:#b45309">Aviso: este color principal es muy claro. El texto blanco de la portada puede verse poco legible.</p>` : ""}`;
+  }
+  // Lee el formulario de la portada tal como está escrito, sin guardarlo.
+  function valoresPortadaForm() {
+    const f = document.querySelector('form[data-form="portada"]');
+    if (!f) return null;
+    const fd = new FormData(f);
+    const get = k => String(fd.get(k) ?? "").trim();
+    return {
+      ...portadaCfg, logo: get("logo"), fondo: get("fondo"),
+      fondoOpacidad: Math.min(100, Math.max(0, Number(get("fondoOpacidad")) || 0)),
+      altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
+      colorPrincipal: get("colorPrincipal") || "#0f321e", colorAcento: get("colorAcento") || "#c8a34b",
+      eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
+      mostrarBotones: fd.get("mostrarBotones") === "on",
+      boton1Texto: get("boton1Texto"), boton2Texto: get("boton2Texto")
+    };
+  }
+  // Revisa que los enlaces de imagen sean enlaces directos.
+  function revisarEnlacePortada(url, nombre) {
+    if (!url) return "";
+    if (!/^https?:\/\/\S+$/i.test(url)) return nombre + ": escribe un enlace que empiece con http:// o https://";
+    if (/^https?:\/\/ibb\.co\//i.test(url)) return nombre + ": ese enlace abre una página, no la imagen. Usa el \"Direct link\" de ImgBB (i.ibb.co).";
+    return "";
   }
   async function guardarPortada() {
     const f = document.querySelector('form[data-form="portada"]');
     if (!f) return;
+    const fdRev = new FormData(f);
+    const errLogo = revisarEnlacePortada(String(fdRev.get("logo") || "").trim(), "Logo");
+    const errFondo = revisarEnlacePortada(String(fdRev.get("fondo") || "").trim(), "Imagen de fondo");
+    if (errLogo || errFondo) { aviso([errLogo, errFondo].filter(Boolean).join(" · ")); return; }
     const fd = new FormData(f);
     const get = k => String(fd.get(k) ?? "").trim();
     const datos = {
@@ -3088,6 +3125,12 @@
     const grados = GRADOS_FLEX[e.target.value] || [];
     const sel = document.getElementById("flexGrado");
     if (sel) sel.innerHTML = grados.length ? `<option value="">Elige el grado…</option>` + grados.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join("") : `<option value="">Primero elige el nivel</option>`;
+  });
+  $("adB").addEventListener("input", e => {
+    if (!e.target.closest || !e.target.closest('form[data-form="portada"]')) return;
+    const c = valoresPortadaForm();
+    const cont = document.getElementById("portadaVista");
+    if (c && cont) cont.innerHTML = vistaPortadaHtml(c);
   });
   $("adB").addEventListener("focusin", e => { if (e.target.name === "anexo") pintarListaAnexo(e.target.value); });
   $("adB").addEventListener("focusout", e => { if (e.target.name === "anexo") setTimeout(() => { const c = document.getElementById("listaAnexos"); if (c) c.hidden = true; }, 180); });
