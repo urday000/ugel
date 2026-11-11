@@ -2701,6 +2701,17 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
       ...hojasNivel
     ]);
   }
+  function excelDescargar(nombreArchivo, hojas) {
+    try {
+      if (typeof XLSX === "undefined") throw new Error("la librería de Excel no cargó. Revisa tu conexión y recarga con Ctrl+F5.");
+      const wb = XLSX.utils.book_new();
+      hojas.forEach(h => xlsHoja(wb, h.nombre, h.titulo, h.filas.length ? h.filas : [{ aviso: "Sin datos registrados" }], h.lineas));
+      XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error("Error al descargar Excel:", e);
+      aviso("No se pudo descargar el Excel: " + (e && e.message ? e.message : e));
+    }
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
@@ -3159,5 +3170,6 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>if(typeof XLSX==="undefined"){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";document.head.appendChild(s);}</script>
 </body>
 </html>
