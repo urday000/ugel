@@ -2608,6 +2608,99 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
     }
     return filas;
   }
+  // ================= Excel ordenado: encabezado con UGEL, nivel educativo e institución =================
+  function xlsLineasIE(ie) {
+    const codigos = ie ? ((ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" / ") || (ie.codigosModulares || []).join(" / ")) : "";
+    return ie
+      ? [`IE: ${ie.nombre || ""}`, `Distrito: ${ie.distrito || ""}  ·  Código modular: ${codigos}`]
+      : ["Todas las instituciones"];
+  }
+  function xlsEncabezado(nivel, ie) {
+    return ["UGEL CASTILLA · DRE AREQUIPA", `NIVEL EDUCATIVO: ${nivel}`, ...xlsLineasIE(ie)];
+  }
+  function xlsHoja(wb, nombre, titulo, objs, lineas) {
+    const claves = [];
+    objs.forEach(o => Object.keys(o).forEach(k => { if (!claves.includes(k) && !k.startsWith("_") && k !== "id") claves.push(k); }));
+    const cab = claves.map(xlsPretty);
+    const datos = objs.map(o => claves.map(k => xlsValor(o[k])));
+    const n = Math.max(1, claves.length);
+    const bloque = (lineas && lineas.length) ? lineas : [titulo, ""];
+    const fecha = `Generado: ${new Date().toLocaleString("es-PE")}  ·  ${objs.length} registro(s)`;
+    const cabRow = bloque.length + 2;
+    const aoa = [...bloque, fecha, [], cab, ...datos];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const enc = (r, c) => XLSX.utils.encode_cell({ r, c });
+    const borde = { top: { style: "thin", color: { rgb: "C9D6CF" } }, bottom: { style: "thin", color: { rgb: "C9D6CF" } }, left: { style: "thin", color: { rgb: "C9D6CF" } }, right: { style: "thin", color: { rgb: "C9D6CF" } } };
+    bloque.forEach((linea, r) => {
+      const cell = ws[enc(r, 0)];
+      if (!cell) return;
+      if (r === 0) cell.s = { font: { bold: true, sz: 13, color: { rgb: "0B5C3A" } } };
+      else if (String(linea).startsWith("NIVEL EDUCATIVO")) cell.s = { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "B45309" } }, alignment: { vertical: "center" } };
+      else cell.s = { font: { color: { rgb: "1F2937" } } };
+    });
+    const fCell = ws[enc(bloque.length, 0)];
+    if (fCell) fCell.s = { font: { italic: true, color: { rgb: "6B7280" } } };
+    cab.forEach((_, c) => { const cell = ws[enc(cabRow, c)]; if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0B5C3A" } }, alignment: { wrapText: true, vertical: "center", horizontal: "center" }, border: borde }; });
+    datos.forEach((fila, r) => fila.forEach((_, c) => {
+      const cell = ws[enc(cabRow + 1 + r, c)];
+      if (cell) cell.s = { fill: { fgColor: { rgb: r % 2 ? "F5FAF7" : "FFFFFF" } }, alignment: { vertical: "top", wrapText: true }, border: borde };
+    }));
+    ws["!cols"] = claves.map((_, c) => ({ wch: Math.min(50, Math.max(cab[c].length, ...datos.map(r => String(r[c] ?? "").length), 10) + 2) }));
+    ws["!rows"] = bloque.map((_, r) => (r === 0 ? { hpt: 22 } : r === 1 ? { hpt: 24 } : {})).concat([{}, {}, { hpt: 32 }]);
+    ws["!merges"] = bloque.map((_, r) => ({ s: { r, c: 0 }, e: { r, c: Math.max(0, n - 1) } })).concat([{ s: { r: bloque.length, c: 0 }, e: { r: bloque.length, c: Math.max(0, n - 1) } }]);
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: cabRow, c: 0 }, e: { r: cabRow + Math.max(1, datos.length), c: Math.max(0, n - 1) } }) };
+    ws["!freeze"] = { xSplit: 0, ySplit: cabRow + 1 };
+    XLSX.utils.book_append_sheet(wb, ws, String(nombre).slice(0, 31));
+  }
+  function excelDescargar(nombreArchivo, hojas) {
+    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
+    const wb = XLSX.utils.book_new();
+    hojas.forEach(h => xlsHoja(wb, h.nombre, h.titulo, h.filas.length ? h.filas : [{ aviso: "Sin datos registrados" }], h.lineas));
+    XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  // Una hoja por nivel educativo, con su propio formato de columnas.
+  function matriculaHojasPorNivel(ie) {
+    const grupos = {};
+    (ie.matriculaPorNivel || []).forEach(m => { const k = nivelSimpleAG(m.nivel); (grupos[k] = grupos[k] || []).push(m); });
+    return ["Inicial", "Primaria", "Secundaria", "Otro"].filter(k => grupos[k]).map(k => ({
+      nombre: k,
+      lineas: xlsEncabezado(k.toUpperCase(), ie),
+      titulo: `${k} · ${ie.nombre || ""}`,
+      filas: matriculaFormatoUGEL({ ...ie, matriculaPorNivel: grupos[k] })
+    }));
+  }
+  function excelSeccion(i, tipo) {
+    const ie = todas[i];
+    if (!ie) return;
+    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
+    const lineasTodos = xlsEncabezado("TODOS LOS NIVELES", ie);
+    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo: ie.nombre, lineas: lineasTodos, filas: identificacionIE(ie) }]);
+    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo: ie.nombre, lineas: xlsEncabezado("SEGÚN CADA PLAZA", ie), filas: docentesIE(ie) }]);
+    if (tipo === "estudiantes") {
+      const e = estudiantesIE(ie);
+      return excelDescargar(base + "_estudiantes", [...matriculaHojasPorNivel(ie), { nombre: "Resumen H y M", titulo: ie.nombre, lineas: lineasTodos, filas: e.resumen }]);
+    }
+    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo: ie.nombre, lineas: xlsEncabezado("SEGÚN EL ANÁLISIS DE CADA GRADO", ie), filas: analisisFilasIE(ie, i) }]);
+  }
+  function analisisGeneralExcel() {
+    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
+    const resumen = [], detalle = [];
+    const porNivel = { Inicial: [], Primaria: [], Secundaria: [], Otro: [] };
+    lista.forEach(x => {
+      const r = resumenDeIE(x.i);
+      resumen.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), codigo: xlsValor(x.ie.codigo), verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length, niveles: porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ") });
+      analisisFilasIE(x.ie, x.i).forEach(f => detalle.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), ...f }));
+      matriculaHojasPorNivel(x.ie).forEach(h => h.filas.forEach(f => { if (f.distrito !== "TOTAL") porNivel[h.nombre].push(f); }));
+    });
+    const hojasNivel = ["Inicial", "Primaria", "Secundaria", "Otro"].filter(k => porNivel[k].length).map(k => ({
+      nombre: "Matrícula " + k, titulo: k, lineas: xlsEncabezado(k.toUpperCase(), null), filas: porNivel[k]
+    }));
+    excelDescargar("Analisis_general", [
+      { nombre: "Resumen por IE", titulo: "Resumen", lineas: xlsEncabezado("TODOS LOS NIVELES", null), filas: resumen },
+      { nombre: "Detalle por grado", titulo: "Detalle", lineas: xlsEncabezado("TODOS LOS NIVELES", null), filas: detalle },
+      ...hojasNivel
+    ]);
+  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
