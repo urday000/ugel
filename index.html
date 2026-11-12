@@ -1436,6 +1436,269 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
   .niv-chip { display:inline-flex; align-items:center; gap:4px; margin:2px 8px 2px 0; white-space:nowrap; }
   .xls-btn { margin:0 0 12px; }
 </style>
+<style id="diseno-ugel-v4">
+/* ================= REDISEÑO V4 · PÁGINA PÚBLICA · Paleta UGEL Castilla =================
+   Azul cielo, azul profundo, verde GeoPorque y dorado. Solo estilos: no cambia datos, imágenes ni portada. */
+:root{
+  --u-prof:#0A2A66; --u-azul:#1456B8; --u-cielo:#2DB7E8; --u-celeste:#BFE9F8; --u-hielo:#EEF8FD;
+  --u-verde:#3DAE4B; --u-oro:#F2B632; --u-tinta:#0E2347;
+  --basalto:#0A2A66; --basalto-2:#123F8F; --rio:#1B7FD1; --lago:#2DB7E8; --indigo:#1456B8; --maiz:#F2B632; --alba:#7BD8F5;
+  --bg:#EEF8FD; --text:#0E2347; --muted:#4D6585; --border:#CFE6F3;
+  --accent:#123F8F; --accent-2:#1B7FD1; --accent-soft:#DDF1FB; --gold:#F2B632;
+  --shadow:0 20px 44px -24px rgba(10,42,102,.45);
+  --grad-azul:linear-gradient(120deg,#0A2A66 0%,#1456B8 55%,#2DB7E8 100%);
+}
+
+/* ---------- Fondo ---------- */
+body{
+  background:
+    radial-gradient(900px 520px at 100% 0%, rgba(45,183,232,.30), transparent 60%),
+    radial-gradient(800px 520px at 0% 40%, rgba(61,174,75,.12), transparent 60%),
+    radial-gradient(700px 500px at 100% 90%, rgba(242,182,50,.13), transparent 60%),
+    linear-gradient(180deg,#E6F6FD 0%,#F6FBFF 100%) !important;
+  background-attachment:fixed !important; background-repeat:no-repeat !important;
+  color:var(--text);
+}
+/* Hexágonos flotantes (como los de la portada de la UGEL) */
+body::before, body::after{
+  content:""; position:fixed; z-index:-1; pointer-events:none;
+  clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);
+}
+body::before{ width:380px; height:380px; right:-90px; top:14%;
+  background:linear-gradient(135deg,rgba(45,183,232,.22),rgba(20,86,184,.10)); animation:u-flota 14s ease-in-out infinite; }
+body::after{ width:300px; height:300px; left:-80px; bottom:8%;
+  background:linear-gradient(135deg,rgba(61,174,75,.18),rgba(45,183,232,.10)); animation:u-flota 18s ease-in-out infinite reverse; }
+
+/* ---------- Animaciones base ---------- */
+@keyframes u-subir{ from{opacity:0; transform:translateY(22px)} to{opacity:1; transform:none} }
+@keyframes u-flota{ 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-28px) rotate(8deg)} }
+@keyframes u-franja{ to{ background-position:200% 0 } }
+@keyframes u-brillo{ 0%{transform:translateX(-120%)} 60%,100%{transform:translateX(120%)} }
+@keyframes u-grad{ 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes u-pop{ from{opacity:0; transform:scale(.6)} to{opacity:1; transform:none} }
+@keyframes u-pulso{ 0%,100%{box-shadow:0 0 0 0 rgba(45,183,232,.45)} 50%{box-shadow:0 0 0 10px rgba(45,183,232,0)} }
+@keyframes u-entra{ from{opacity:0; transform:translateX(-14px)} to{opacity:1; transform:none} }
+
+#app > *{ animation:u-subir .55s cubic-bezier(.2,.8,.2,1) both; }
+#app > *:nth-child(2){ animation-delay:.06s } #app > *:nth-child(3){ animation-delay:.12s }
+#app > *:nth-child(4){ animation-delay:.18s } #app > *:nth-child(5){ animation-delay:.24s }
+
+/* ---------- Barra superior ---------- */
+.barra-pub{
+  background:linear-gradient(90deg,#082256 0%,#0F3F95 55%,#1B7FD1 100%) !important;
+  border-bottom:0 !important; box-shadow:0 10px 26px -12px rgba(8,34,86,.65) !important;
+}
+.barra-pub:after{
+  content:""; position:absolute; left:0; right:0; bottom:-3px; height:3px;
+  background:linear-gradient(90deg,#2DB7E8,#3DAE4B,#F2B632,#2DB7E8); background-size:200% 100%;
+  animation:u-franja 7s linear infinite;
+}
+.marca-pub{
+  background:linear-gradient(90deg,#fff,#BFE9F8) !important; -webkit-background-clip:text !important; background-clip:text !important;
+  color:transparent !important; font-weight:800; letter-spacing:.02em;
+}
+.barra-pub button{ position:relative; transition:background .25s,color .25s,transform .25s,box-shadow .25s; }
+.barra-pub button:hover{ background:rgba(255,255,255,.18) !important; transform:translateY(-2px); }
+.barra-pub button.on{
+  background:linear-gradient(90deg,#2DB7E8,#7BD8F5) !important; color:#05224F !important; font-weight:700;
+  box-shadow:0 6px 16px rgba(45,183,232,.5) !important;
+}
+.barra-pub .btn-usuarios{
+  display:inline-flex; align-items:center; padding:9px 20px; border-radius:999px; text-decoration:none; font-weight:700; font-size:.95rem;
+  background:linear-gradient(90deg,#3DAE4B,#27A59A) !important; color:#fff !important; margin-left:auto;
+  box-shadow:0 6px 16px rgba(61,174,75,.4); transition:transform .25s,box-shadow .25s;
+}
+.barra-pub .btn-usuarios:hover{ transform:translateY(-2px) scale(1.04); box-shadow:0 10px 22px rgba(61,174,75,.55); }
+
+/* ---------- Estadísticas ---------- */
+.stats{
+  position:relative; background:var(--grad-azul) !important; border-radius:22px !important;
+  box-shadow:0 18px 38px -18px rgba(10,42,102,.6) !important; overflow:hidden;
+}
+.stats:after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);
+  animation:u-brillo 6s ease-in-out infinite;
+}
+.stat{ color:#D6EEFB !important; border-right:1px solid rgba(255,255,255,.18) !important; transition:background .25s,transform .25s; }
+.stat:hover{ background:rgba(255,255,255,.12) !important; transform:scale(1.03); }
+.stat b{ animation:u-pop .8s cubic-bezier(.2,.9,.3,1.4) both; text-shadow:0 2px 10px rgba(0,0,0,.25) !important; }
+.stat:nth-child(1) b{ color:#FFD766 !important; }
+.stat:nth-child(2) b{ color:#9FEAFF !important; }
+.stat:nth-child(3) b{ color:#fff !important; }
+
+/* ---------- Botones de acción ---------- */
+.ver-mapa{
+  background:linear-gradient(90deg,#1456B8,#2DB7E8) !important; color:#fff !important; border-radius:999px !important;
+  box-shadow:0 8px 20px -6px rgba(20,86,184,.55) !important; transition:transform .25s,box-shadow .25s,filter .25s !important;
+}
+.ver-mapa[data-refrescar]{ background:linear-gradient(90deg,#27A59A,#3DAE4B) !important; box-shadow:0 8px 20px -6px rgba(61,174,75,.5) !important; }
+.ver-mapa[data-ver-todas]{ background:linear-gradient(90deg,#0A2A66,#1B7FD1) !important; }
+.ver-mapa:hover{ transform:translateY(-3px) scale(1.03) !important; filter:brightness(1.08); }
+
+/* ---------- Títulos ---------- */
+.kicker-pub{ color:#1B7FD1 !important; }
+.kicker-pub:before{ background:linear-gradient(90deg,#2DB7E8,#3DAE4B) !important; animation:u-pop .9s ease both; transform-origin:left; }
+.sec-pub, .titulo{
+  background:linear-gradient(90deg,#0A2A66,#1B7FD1 55%,#2DB7E8,#0A2A66) !important; background-size:250% 100% !important;
+  -webkit-background-clip:text !important; background-clip:text !important; color:transparent !important;
+  animation:u-grad 8s ease-in-out infinite;
+}
+h2.sec{ color:#123F8F !important; border-left:5px solid #2DB7E8 !important; padding-left:12px; }
+.sub{ color:var(--muted) !important; }
+
+/* ---------- Buscadores y filtros ---------- */
+.buscador, .filtro-anexo select, .nominal-cat, .pg-barra input[type=search], .pg-barra select{
+  border:2px solid #BFE0F2 !important; background:#fff !important; border-radius:14px !important; transition:border-color .25s,box-shadow .25s,transform .25s;
+}
+.buscador:focus, .filtro-anexo select:focus, .nominal-cat:focus, .pg-barra input:focus, .pg-barra select:focus{
+  border-color:#2DB7E8 !important; box-shadow:0 0 0 5px rgba(45,183,232,.22) !important; outline:none; transform:translateY(-1px);
+}
+.volver{ border:2px solid #BFE0F2 !important; color:#1B7FD1 !important; background:#fff !important; transition:all .25s; }
+.volver:hover{ background:linear-gradient(90deg,#1456B8,#2DB7E8) !important; color:#fff !important; border-color:transparent !important; transform:translateX(-5px); }
+
+/* ---------- Tarjetas de distrito e instituciones ---------- */
+.grid-d .card:nth-child(4n+1), .cuadro:nth-child(4n+1){ --c1:#1456B8; --c2:#2DB7E8; }
+.grid-d .card:nth-child(4n+2), .cuadro:nth-child(4n+2){ --c1:#2E9E3F; --c2:#7BD36A; }
+.grid-d .card:nth-child(4n+3), .cuadro:nth-child(4n+3){ --c1:#E69A12; --c2:#F2B632; }
+.grid-d .card:nth-child(4n+4), .cuadro:nth-child(4n+4){ --c1:#0891C4; --c2:#5BD0F2; }
+.grid-d .card:nth-child(4n+1):before{ background:linear-gradient(90deg,#1456B8,#2DB7E8) !important; }
+.grid-d .card:nth-child(4n+2):before{ background:linear-gradient(90deg,#2E9E3F,#7BD36A) !important; }
+.grid-d .card:nth-child(4n+3):before{ background:linear-gradient(90deg,#E69A12,#F2B632) !important; }
+.grid-d .card:nth-child(4n+4):before{ background:linear-gradient(90deg,#0891C4,#5BD0F2) !important; }
+
+.card{
+  background:linear-gradient(160deg,#FFFFFF 55%,#EEF8FD 100%) !important; border:1px solid #D3E8F5 !important;
+  box-shadow:0 10px 26px -16px rgba(10,42,102,.45) !important;
+}
+.card:after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:2;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%); transform:translateX(-120%); transition:transform .8s ease;
+}
+.card:hover:after, .card:focus-visible:after{ transform:translateX(120%); }
+.card:hover, .card:focus-visible{
+  transform:translateY(-8px) !important; border-color:var(--c1) !important;
+  box-shadow:0 26px 44px -22px rgba(10,42,102,.55), 0 0 0 3px rgba(45,183,232,.18) !important;
+}
+.card h2{ color:#0F3578 !important; }
+.card .abre{ color:var(--c1) !important; }
+.card:hover .abre{ transform:translateX(8px); }
+.grid-d .card{ animation:u-subir .6s cubic-bezier(.2,.8,.2,1) both; }
+
+.ie-card{ background:#fff !important; border-radius:22px !important; }
+.ie-card:hover .ie-img{ transform:scale(1.08); }
+.ie-img{ background-color:#CDE9F7 !important; color:#4D6585 !important; }
+.ie-info{ border-left:5px solid #2DB7E8 !important; background:linear-gradient(180deg,#fff,#F4FAFE); }
+.ie-info h2{ color:#0F3578 !important; }
+.ie-info .meta b{ color:#1B7FD1 !important; }
+.ie-info .abre{ color:#1456B8 !important; font-weight:700; }
+.ie-card:hover .ie-info{ border-left-color:#3DAE4B !important; }
+
+/* ---------- Anexos y grupos ---------- */
+ol.anexos{ border:2px solid #CFE6F3 !important; background:#fff; }
+ol.anexos li::marker{ color:#2DB7E8 !important; font-weight:700; }
+ol.anexos li:hover{ color:#1B7FD1 !important; transform:translateX(6px); }
+.grupo-anexo{ color:#0F3578 !important; }
+.cant-g{ background:linear-gradient(90deg,#2DB7E8,#7BD8F5) !important; color:#05224F !important; font-weight:700; }
+
+/* ---------- Ficha de la institución ---------- */
+.ficha{ background:#fff !important; box-shadow:0 20px 44px -26px rgba(10,42,102,.5) !important; }
+.ie-panel{ background-color:#0A2A66 !important; box-shadow:0 20px 40px -22px rgba(10,42,102,.7); }
+.ie-panel-velo{ background:linear-gradient(90deg,rgba(5,28,76,.93) 0%,rgba(10,62,140,.62) 55%,rgba(20,100,190,.18) 100%) !important; }
+.ie-panel p{ color:#DCEEFA !important; }
+.ie-panel-datos span{ transition:transform .25s,background .25s; backdrop-filter:blur(4px); }
+.ie-panel-datos span:hover{ transform:translateY(-4px); background:rgba(255,255,255,.2); }
+.ie-panel-datos small{ color:#CDE8F7 !important; }
+.ie-panel h1{ animation:u-entra .7s ease both; }
+.ie-panel-tag{ animation:u-pulso 2.8s ease-in-out infinite; }
+.car{ background:#0A2A66 !important; }
+.car .prev:hover, .car .next:hover{ background:#2DB7E8 !important; color:#fff; }
+.car img{ transition:transform .6s ease; }
+
+.sub-h{ color:#1B7FD1 !important; }
+.kpi-p{ border:0 !important; transition:transform .25s,box-shadow .25s; }
+.kpi-p:nth-child(4n+1){ background:linear-gradient(135deg,#DCF1FB,#EEF9FF) !important; } .kpi-p:nth-child(4n+1) b{ color:#1456B8 !important; }
+.kpi-p:nth-child(4n+2){ background:linear-gradient(135deg,#E1F6E4,#F1FBF2) !important; } .kpi-p:nth-child(4n+2) b{ color:#2E9E3F !important; }
+.kpi-p:nth-child(4n+3){ background:linear-gradient(135deg,#FFF1CF,#FFF9E7) !important; } .kpi-p:nth-child(4n+3) b{ color:#B87500 !important; }
+.kpi-p:nth-child(4n+4){ background:linear-gradient(135deg,#D6F2FB,#EAFAFF) !important; } .kpi-p:nth-child(4n+4) b{ color:#0891C4 !important; }
+.kpi-p:hover{ transform:translateY(-5px) scale(1.04); box-shadow:0 14px 26px -16px rgba(10,42,102,.5); }
+.kpi-total{ background:linear-gradient(135deg,#DCF1FB,#E4F7E8) !important; transition:transform .25s; }
+.kpi-total:hover{ transform:translateY(-4px); }
+.kpi-total b{ color:#0F3578 !important; }
+.chip{ background:linear-gradient(90deg,#DFF2FC,#EAF8FF) !important; color:#0F3578 !important; transition:transform .2s; }
+.chip:hover{ transform:scale(1.08); }
+.chip:nth-child(3n+2){ background:linear-gradient(90deg,#E1F6E4,#F0FBF1) !important; }
+.chip:nth-child(3n+3){ background:linear-gradient(90deg,#FFF1CF,#FFF9E7) !important; }
+.chip b{ color:#1B7FD1 !important; }
+.tabla-p, .tabla-nominal, .pg-tabla{ border:1px solid #CFE6F3 !important; border-radius:16px !important; box-shadow:0 10px 24px -20px rgba(10,42,102,.5); }
+.tabla-p th, .tabla-nominal th, .pg-tabla th{ background:#DDF1FB !important; color:#0F3578 !important; font-weight:700; }
+.tabla-p tr:hover td, .tabla-nominal tbody tr:hover, .pg-tabla tbody tr:hover{ background:#EAF6FD !important; }
+.tabla-p tbody tr, .tabla-nominal tbody tr, .pg-tabla tbody tr{ transition:background .2s; }
+.tabla-p td.num{ color:#1B7FD1 !important; }
+.mapa{ color:#1B7FD1 !important; font-weight:700; transition:letter-spacing .25s; }
+.mapa:hover{ letter-spacing:.02em; }
+
+.cap-col{ border-radius:18px !important; border-top:5px solid #1B7FD1 !important; transition:transform .25s,box-shadow .25s; }
+.cap-col:hover{ transform:translateY(-4px); box-shadow:0 16px 28px -18px rgba(10,42,102,.5); }
+.cap-col:nth-child(4n+2){ border-top-color:#3DAE4B !important; }
+.cap-col:nth-child(4n+3){ border-top-color:#F2B632 !important; }
+.cap-col:nth-child(4n+4){ border-top-color:#2DB7E8 !important; }
+.cap-col h3 b, .cap-total{ background:#DDF1FB !important; color:#0F3578 !important; }
+.cap-fila b, .cap-total b{ border-color:#1B7FD1 !important; color:#0F3578 !important; }
+
+.ident-cab{ background:linear-gradient(135deg,#F2FAFF,#E6F4FC) !important; }
+.ident-cod-caja{ transition:transform .25s,box-shadow .25s,border-color .25s; }
+button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px -16px rgba(10,42,102,.55); border-color:#2DB7E8; }
+.rac-caja{ transition:transform .25s,box-shadow .25s; }
+.rac-caja:hover{ transform:translateY(-3px); box-shadow:0 12px 22px -16px rgba(10,42,102,.45); }
+
+/* ---------- Cuadros deslizables ---------- */
+.cuadro{ border-top:6px solid var(--c1) !important; background:linear-gradient(180deg,#fff,#F6FBFE) !important; box-shadow:0 14px 30px -22px rgba(10,42,102,.5) !important; }
+.cuadro-titulo{ color:#0F3578 !important; }
+.cuadros-tabs button{ border:1px solid #BFE0F2 !important; transition:transform .2s,background .2s,box-shadow .2s; }
+.cuadros-tabs button:hover{ transform:translateY(-2px); }
+.cuadros-tabs button span{ background:#DDF1FB !important; color:#0F3578 !important; }
+.cuadros-tabs button.on{ background:linear-gradient(90deg,#0F3F95,#1B7FD1) !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 18px -8px rgba(20,86,184,.6); }
+.cuadros-tabs button.on span{ background:#F2B632 !important; color:#2A1D00 !important; }
+.cuadros-dots button.on{ background:#2DB7E8 !important; }
+.cuadros-barra > button, .cuadros-nav button[data-cnav]{ color:#1B7FD1 !important; border-color:#BFE0F2 !important; transition:transform .2s,background .2s,color .2s; }
+.cuadros-barra > button:hover, .cuadros-nav button[data-cnav]:hover{ background:#1B7FD1 !important; color:#fff !important; transform:scale(1.1); }
+
+/* ---------- Mapa ---------- */
+.mapa-layout{ gap:20px !important; }
+.mapa-wrap, .mapa-lista{ border:0 !important; border-radius:20px !important; box-shadow:0 18px 40px -26px rgba(10,42,102,.55) !important; }
+.mapa-lista .mitem{ border-left:6px solid #1B7FD1 !important; background:#fff !important; transition:transform .25s,box-shadow .25s,background .25s; }
+.mapa-lista .mitem:nth-child(3n+2){ border-left-color:#3DAE4B !important; }
+.mapa-lista .mitem:nth-child(3n+3){ border-left-color:#F2B632 !important; }
+.mapa-lista .mitem:hover{ transform:translateX(6px); box-shadow:0 10px 20px -12px rgba(10,42,102,.5); }
+.mapa-lista .mitem.activo{ background:#E6F5FD !important; border-color:#2DB7E8 !important; }
+.mitem strong, .pop-t{ color:#0F3578 !important; }
+.pop-b a, .pop-b button{ background:linear-gradient(90deg,#1456B8,#2DB7E8) !important; border-radius:999px !important; transition:transform .2s; }
+.pop-b a:hover, .pop-b button:hover{ transform:translateY(-2px); }
+.etiq-ie{ background:#fff !important; color:#0F3578 !important; border-left:3px solid #2DB7E8 !important; }
+
+/* ---------- Ventana de acceso y extras ---------- */
+.modal-fondo{ background:rgba(6,30,80,.6) !important; }
+.modal-caja{ border-top:6px solid #2DB7E8 !important; border-radius:22px !important; animation:u-subir .4s ease both; }
+.modal-caja h3{ color:#0F3578 !important; }
+.acciones-modal button.primario{ background:linear-gradient(90deg,#1456B8,#2DB7E8) !important; }
+.acciones-modal button{ background:#DDF1FB; color:#0F3578; }
+.ir-panel{ color:#1B7FD1 !important; }
+.estado{ border:2px dashed #BFE0F2 !important; background:rgba(255,255,255,.8) !important; }
+.ux-table-help{ color:#4D6585 !important; }
+.ux-backtop{ background:linear-gradient(135deg,#1456B8,#2DB7E8) !important; color:#fff !important; border:0 !important; box-shadow:0 12px 26px -8px rgba(20,86,184,.65) !important; }
+.ux-backtop:hover{ transform:translateY(-4px) scale(1.08) !important; }
+:focus-visible{ outline:3px solid #7BD8F5 !important; outline-offset:2px; }
+
+/* ---------- Barras de desplazamiento ---------- */
+*{ scrollbar-color:#2DB7E8 #E3F2FA; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-thumb{ background:linear-gradient(#2DB7E8,#1456B8); border-radius:10px; }
+::-webkit-scrollbar-track{ background:#E3F2FA; border-radius:10px; }
+
+@media(max-width:640px){ body::before{ width:220px; height:220px; } body::after{ width:180px; height:180px; } .barra-pub .btn-usuarios{ margin-left:0; } }
+@media(prefers-reduced-motion:reduce){ *, *::before, *::after{ animation:none !important; transition:none !important; } }
+</style>
 </head>
 <body>
 <nav class="barra-pub" id="barraPub">
@@ -1518,11 +1781,6 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
 
   const app = document.getElementById("app");
   const avisoEl = document.getElementById("aviso");
-  // Muestra mensajes en el aviso de la página (faltaba esta función: las descargas fallaban sin mostrar nada)
-  function aviso(texto) {
-    if (avisoEl) { avisoEl.textContent = texto; avisoEl.className = "aviso"; avisoEl.hidden = false; }
-    else alert(texto);
-  }
   let todas = [];     // instituciones (el índice de este arreglo identifica cada IE)
   let distritos = [];
   let fuente = "Cargando…";
@@ -2566,157 +2824,6 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
       { nombre: "Matrícula formato UGEL", titulo: "Matrícula de todas las instituciones (formato UGEL)", filas: matricula }
     ]);
   }
-  // Matrícula con el formato oficial de cada nivel:
-  // Inicial: hombres y mujeres por edad. Primaria y Secundaria: secciones, hombres y mujeres por grado.
-  function modalidadTextoMat(m, ie) {
-    if (m.modalidad) return m.modalidad;
-    const c = modalidadDe ? modalidadDe(m.nivel) : "";
-    return { EBR: "Educación Básica Regular", EBA: "Educación Básica Alternativa", EBE: "Educación Básica Especial", ETP: "Educación Técnico Productiva", UGEL: "" }[c] || "";
-  }
-  function tipoIEMatricula(ie) {
-    const g = String(ie.gestion || "").toUpperCase();
-    if (g.includes("ESTATAL")) return "A1 - Pública - Sector Educación";
-    if (g.includes("PRIVAD")) return "B5 - Privada - Fiscal";
-    return ie.gestion || "";
-  }
-  function matriculaFormatoUGEL(ie) {
-    const num = v => Number(v) || 0;
-    const niveles = ie.matriculaPorNivel || [];
-    const etiquetas = [];
-    niveles.forEach(m => (m.detalle || []).forEach(d => { const e = String(d.grado); if (!etiquetas.includes(e)) etiquetas.push(e); }));
-    const esInicial = m => sinTildes(m.nivel || "").includes("inicial");
-    const filas = niveles.map(m => {
-      const fila = {
-        dre: "DRE Arequipa", ugel: "UGEL Castilla", departamento: "AREQUIPA", provincia: "CASTILLA",
-        distrito: ie.distrito || "", centro_poblado: m.centroPoblado || ie.anexo || "", codigo_modular: m.codigo || "",
-        nombre_ie: ie.nombre || "", nivel: m.nivel || "", modalidad: modalidadTextoMat(m, ie), tipo_ie: tipoIEMatricula(ie),
-        total_estudiantes: num(m.matricula), matricula_definitiva: num(m.definitiva), matricula_en_proceso: num(m.enProceso),
-        total_grados: num(m.grados), total_secciones: num(m.secciones) || (m.detalle || []).reduce((s, d) => s + num(d.secciones), 0),
-        tipo_ie_rvm: ie.tipoIE || ""
-      };
-      etiquetas.forEach(e => {
-        const d = (m.detalle || []).find(x => String(x.grado) === e);
-        if (!esInicial(m)) fila[`${e} Cant Sec`] = d ? num(d.secciones) : "";
-        fila[`${e} Hombres`] = d ? num(d.hombres) : "";
-        fila[`${e} Mujeres`] = d ? num(d.mujeres) : "";
-      });
-      return fila;
-    });
-    if (filas.length) {
-      const total = { dre: "TOTAL", ugel: "", departamento: "", provincia: "", distrito: "", centro_poblado: "", codigo_modular: "", nombre_ie: "", nivel: "", modalidad: "", tipo_ie: "", tipo_ie_rvm: "" };
-      Object.keys(filas[0]).forEach(k => {
-        if (k in total) return;
-        const suma = filas.reduce((s, f) => s + (typeof f[k] === "number" ? f[k] : 0), 0);
-        total[k] = suma;
-      });
-      filas.push(total);
-    }
-    return filas;
-  }
-  // ================= Excel ordenado: encabezado con UGEL, nivel educativo e institución =================
-  function xlsLineasIE(ie) {
-    const codigos = ie ? ((ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" / ") || (ie.codigosModulares || []).join(" / ")) : "";
-    return ie
-      ? [`IE: ${ie.nombre || ""}`, `Distrito: ${ie.distrito || ""}  ·  Código modular: ${codigos}`]
-      : ["Todas las instituciones"];
-  }
-  function xlsEncabezado(nivel, ie) {
-    return ["UGEL CASTILLA · DRE AREQUIPA", `NIVEL EDUCATIVO: ${nivel}`, ...xlsLineasIE(ie)];
-  }
-  function xlsHoja(wb, nombre, titulo, objs, lineas) {
-    const claves = [];
-    objs.forEach(o => Object.keys(o).forEach(k => { if (!claves.includes(k) && !k.startsWith("_") && k !== "id") claves.push(k); }));
-    const cab = claves.map(xlsPretty);
-    const datos = objs.map(o => claves.map(k => xlsValor(o[k])));
-    const n = Math.max(1, claves.length);
-    const bloque = (lineas && lineas.length) ? lineas : [titulo, ""];
-    const fecha = `Generado: ${new Date().toLocaleString("es-PE")}  ·  ${objs.length} registro(s)`;
-    const cabRow = bloque.length + 2;
-    const aoa = [...bloque, fecha, [], cab, ...datos];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const enc = (r, c) => XLSX.utils.encode_cell({ r, c });
-    const borde = { top: { style: "thin", color: { rgb: "C9D6CF" } }, bottom: { style: "thin", color: { rgb: "C9D6CF" } }, left: { style: "thin", color: { rgb: "C9D6CF" } }, right: { style: "thin", color: { rgb: "C9D6CF" } } };
-    bloque.forEach((linea, r) => {
-      const cell = ws[enc(r, 0)];
-      if (!cell) return;
-      if (r === 0) cell.s = { font: { bold: true, sz: 13, color: { rgb: "0B5C3A" } } };
-      else if (String(linea).startsWith("NIVEL EDUCATIVO")) cell.s = { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "B45309" } }, alignment: { vertical: "center" } };
-      else cell.s = { font: { color: { rgb: "1F2937" } } };
-    });
-    const fCell = ws[enc(bloque.length, 0)];
-    if (fCell) fCell.s = { font: { italic: true, color: { rgb: "6B7280" } } };
-    cab.forEach((_, c) => { const cell = ws[enc(cabRow, c)]; if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0B5C3A" } }, alignment: { wrapText: true, vertical: "center", horizontal: "center" }, border: borde }; });
-    datos.forEach((fila, r) => fila.forEach((_, c) => {
-      const cell = ws[enc(cabRow + 1 + r, c)];
-      if (cell) cell.s = { fill: { fgColor: { rgb: r % 2 ? "F5FAF7" : "FFFFFF" } }, alignment: { vertical: "top", wrapText: true }, border: borde };
-    }));
-    ws["!cols"] = claves.map((_, c) => ({ wch: Math.min(50, Math.max(cab[c].length, ...datos.map(r => String(r[c] ?? "").length), 10) + 2) }));
-    ws["!rows"] = bloque.map((_, r) => (r === 0 ? { hpt: 22 } : r === 1 ? { hpt: 24 } : {})).concat([{}, {}, { hpt: 32 }]);
-    ws["!merges"] = bloque.map((_, r) => ({ s: { r, c: 0 }, e: { r, c: Math.max(0, n - 1) } })).concat([{ s: { r: bloque.length, c: 0 }, e: { r: bloque.length, c: Math.max(0, n - 1) } }]);
-    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: cabRow, c: 0 }, e: { r: cabRow + Math.max(1, datos.length), c: Math.max(0, n - 1) } }) };
-    ws["!freeze"] = { xSplit: 0, ySplit: cabRow + 1 };
-    XLSX.utils.book_append_sheet(wb, ws, String(nombre).slice(0, 31));
-  }
-  function excelDescargar(nombreArchivo, hojas) {
-    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
-    const wb = XLSX.utils.book_new();
-    hojas.forEach(h => xlsHoja(wb, h.nombre, h.titulo, h.filas.length ? h.filas : [{ aviso: "Sin datos registrados" }], h.lineas));
-    XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }
-  // Una hoja por nivel educativo, con su propio formato de columnas.
-  function matriculaHojasPorNivel(ie) {
-    const grupos = {};
-    (ie.matriculaPorNivel || []).forEach(m => { const k = nivelSimpleAG(m.nivel); (grupos[k] = grupos[k] || []).push(m); });
-    return ["Inicial", "Primaria", "Secundaria", "Otro"].filter(k => grupos[k]).map(k => ({
-      nombre: k,
-      lineas: xlsEncabezado(k.toUpperCase(), ie),
-      titulo: `${k} · ${ie.nombre || ""}`,
-      filas: matriculaFormatoUGEL({ ...ie, matriculaPorNivel: grupos[k] })
-    }));
-  }
-  function excelSeccion(i, tipo) {
-    const ie = todas[i];
-    if (!ie) return;
-    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
-    const lineasTodos = xlsEncabezado("TODOS LOS NIVELES", ie);
-    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo: ie.nombre, lineas: lineasTodos, filas: identificacionIE(ie) }]);
-    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo: ie.nombre, lineas: xlsEncabezado("SEGÚN CADA PLAZA", ie), filas: docentesIE(ie) }]);
-    if (tipo === "estudiantes") {
-      const e = estudiantesIE(ie);
-      return excelDescargar(base + "_estudiantes", [...matriculaHojasPorNivel(ie), { nombre: "Resumen H y M", titulo: ie.nombre, lineas: lineasTodos, filas: e.resumen }]);
-    }
-    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo: ie.nombre, lineas: xlsEncabezado("SEGÚN EL ANÁLISIS DE CADA GRADO", ie), filas: analisisFilasIE(ie, i) }]);
-  }
-  function analisisGeneralExcel() {
-    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
-    const resumen = [], detalle = [];
-    const porNivel = { Inicial: [], Primaria: [], Secundaria: [], Otro: [] };
-    lista.forEach(x => {
-      const r = resumenDeIE(x.i);
-      resumen.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), codigo: xlsValor(x.ie.codigo), verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length, niveles: porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ") });
-      analisisFilasIE(x.ie, x.i).forEach(f => detalle.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), ...f }));
-      matriculaHojasPorNivel(x.ie).forEach(h => h.filas.forEach(f => { if (f.distrito !== "TOTAL") porNivel[h.nombre].push(f); }));
-    });
-    const hojasNivel = ["Inicial", "Primaria", "Secundaria", "Otro"].filter(k => porNivel[k].length).map(k => ({
-      nombre: "Matrícula " + k, titulo: k, lineas: xlsEncabezado(k.toUpperCase(), null), filas: porNivel[k]
-    }));
-    excelDescargar("Analisis_general", [
-      { nombre: "Resumen por IE", titulo: "Resumen", lineas: xlsEncabezado("TODOS LOS NIVELES", null), filas: resumen },
-      { nombre: "Detalle por grado", titulo: "Detalle", lineas: xlsEncabezado("TODOS LOS NIVELES", null), filas: detalle },
-      ...hojasNivel
-    ]);
-  }
-  function excelDescargar(nombreArchivo, hojas) {
-    try {
-      if (typeof XLSX === "undefined") throw new Error("la librería de Excel no cargó. Revisa tu conexión y recarga con Ctrl+F5.");
-      const wb = XLSX.utils.book_new();
-      hojas.forEach(h => xlsHoja(wb, h.nombre, h.titulo, h.filas.length ? h.filas : [{ aviso: "Sin datos registrados" }], h.lineas));
-      XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    } catch (e) {
-      console.error("Error al descargar Excel:", e);
-      aviso("No se pudo descargar el Excel: " + (e && e.message ? e.message : e));
-    }
-  }
   function pintar() {
     const v = estado.pila[estado.pila.length - 1];
     const portadaEl = document.getElementById("portada");
@@ -3175,6 +3282,5 @@ dl.datos dt{ color:var(--muted); } dl.datos dd{ color:var(--text); }
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script>if(typeof XLSX==="undefined"){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";document.head.appendChild(s);}</script>
 </body>
 </html>
