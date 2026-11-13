@@ -2221,7 +2221,7 @@ tr:hover .thumb{ transform:scale(1.25); }
   }
   const PORTADA_DEFAULT = {
     logo: "", fondo: "", fondoOpacidad: 70, altura: 520,
-    colorPrincipal: "#0A2A66", colorAcento: "#F2B632",
+    colorPrincipal: "#0f321e", colorAcento: "#F2B632",
     eyebrow: "Municipalidad Provincial de Castilla · Aplao",
     titulo: "Directorio de instituciones educativas",
     subtitulo: "Consulta las instituciones de la provincia de Castilla: ubicación, datos, personal y anexos.",
@@ -2560,9 +2560,6 @@ tr:hover .thumb{ transform:scale(1.25); }
     try {
       const doc = await db.collection("config").doc("portada").get();
       portadaCfg = { ...PORTADA_DEFAULT, ...(doc.exists ? doc.data() : {}) };
-      const legado = { "#0f321e": "#0A2A66", "#c8a34b": "#F2B632" };
-      portadaCfg.colorPrincipal = legado[portadaCfg.colorPrincipal] || portadaCfg.colorPrincipal;
-      portadaCfg.colorAcento = legado[portadaCfg.colorAcento] || portadaCfg.colorAcento;
     } catch (e) {
       portadaCfg = { ...PORTADA_DEFAULT };
       aviso("No se pudo leer la portada: " + e.message);
@@ -2582,7 +2579,7 @@ tr:hover .thumb{ transform:scale(1.25); }
       logo: get("logo"), fondo: get("fondo"),
       fondoOpacidad: Math.min(100, Math.max(0, Number(get("fondoOpacidad")) || 0)),
       altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
-      colorPrincipal: get("colorPrincipal") || "#0A2A66",
+      colorPrincipal: get("colorPrincipal") || "#0f321e",
       colorAcento: get("colorAcento") || "#F2B632",
       eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
@@ -2640,7 +2637,7 @@ tr:hover .thumb{ transform:scale(1.25); }
             <h3>Logo y fondo</h3>
             <div class="grid">
               ${campo("logo", "Logo (enlace de la imagen)", c.logo, 'placeholder="Vacío = logo de la UGEL"')}
-              ${campo("fondo", "Imagen de fondo (enlace)", c.fondo, 'placeholder="Vacío = color sólido"')}
+              ${campo("fondo", "Imagen de fondo (enlace)", c.fondo, 'placeholder="Vacío = foto de fondo por defecto"')}
               <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
               <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
             </div>
