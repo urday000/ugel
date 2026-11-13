@@ -2653,6 +2653,9 @@ tr:hover .thumb{ transform:scale(1.25); }
         .portada-vista-barra button.activo { background:#1456B8; color:#fff; }
         #portadaFrame { width:100%; height:620px; border:1px solid #CFE6F3; border-radius:14px; background:#fff; transition:width .25s; }
         .portada-estado { font-weight:700; font-size:.9rem; }
+        .portada-vista-panel:fullscreen { background:#fff; padding:14px; overflow:auto; display:flex; flex-direction:column; border-radius:0; }
+        .portada-vista-panel:fullscreen #portadaFrame { width:100% !important; height:calc(100vh - 64px) !important; border-radius:12px; }
+        .portada-vista-panel:fullscreen .portada-vista-barra { margin-bottom:8px; }
       </style>
       <h1 class="titulo">Portada de la página principal</h1>
       <p class="sub">Los cambios se ven al instante en la vista previa, que es la misma página principal. Pulsa <b>Guardar portada</b> para publicarlos y luego “Actualizar datos” en la página principal.</p>
@@ -2710,12 +2713,14 @@ tr:hover .thumb{ transform:scale(1.25); }
           </div>
           <p class="portada-estado" id="portadaEstado" style="color:#0A6E3A;margin-top:10px">Todos los cambios guardados</p>
         </form>
-        <div class="panel" style="margin:0">
+        <div class="panel portada-vista-panel" style="margin:0">
           <div class="portada-vista-barra">
             <strong>Vista previa en vivo</strong>
             <span style="flex:1"></span>
             <button type="button" class="activo" data-ancho="100%" data-a="portada-vista-ancho">Escritorio</button>
             <button type="button" data-ancho="390px" data-a="portada-vista-ancho">Celular</button>
+            <button type="button" data-a="portada-actualizar-vista" title="Recargar la vista con los valores actuales">↻ Actualizar</button>
+            <button type="button" class="primario" data-a="portada-ampliar" id="btnAmpliarPortada">⛶ Ampliar</button>
           </div>
           <iframe id="portadaFrame" src="index.html?vista=portada" title="Vista previa de la portada"></iframe>
         </div>
@@ -2740,6 +2745,10 @@ tr:hover .thumb{ transform:scale(1.25); }
   });
   document.addEventListener("change", e => {
     if (e.target.closest && e.target.closest('form[data-form="portada"]')) { marcarPortadaSinGuardar(true); enviarPortadaVista(); }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    const btn = document.getElementById("btnAmpliarPortada");
+    if (btn) btn.textContent = document.fullscreenElement ? "⤡ Salir de pantalla completa" : "⛶ Ampliar";
   });
   document.addEventListener("load", e => { if (e.target && e.target.id === "portadaFrame") enviarPortadaVista(); }, true);
 
@@ -3231,6 +3240,13 @@ tr:hover .thumb{ transform:scale(1.25); }
       }
       else if (a === "det-quitar") b.closest("tr.fila-det")?.remove();
       else if (a === "portada-guardar") await guardarPortada();
+      else if (a === "portada-ampliar") {
+        const panel = document.querySelector(".portada-vista-panel");
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (panel && panel.requestFullscreen) await panel.requestFullscreen();
+        else aviso("Tu navegador no permite ampliar la vista previa.");
+      }
+      else if (a === "portada-actualizar-vista") enviarPortadaVista();
       else if (a === "portada-vista-ancho") {
         const fr = document.getElementById("portadaFrame");
         if (fr) fr.style.width = b.dataset.ancho;
