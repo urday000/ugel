@@ -2710,7 +2710,7 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
   function personalGeneralExcel() {
     const pv = Array.isArray(personalVisible) ? personalVisible : [];
     const filas = pv.map(p => { const o = { institucion: nombreIEPersonal(p), distrito: p.distritoOriginal || p.distrito || "" }; Object.entries(p).forEach(([k, v]) => { if (!k.startsWith("_") && k !== "id") o[xlsPretty(k)] = xlsValor(v); }); return o; });
-    excelDescargar("Personal_general", [{ nombre: "Personal visible", titulo: "Personal visible de todas las instituciones", filas }]);
+    excelDocentesUGEL("Personal_general", pv);
   }
   function analisisGeneralExcel() {
     const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
@@ -2970,13 +2970,51 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
       aviso("No se pudo descargar el Excel: " + (e && e.message ? e.message : e));
     }
   }
+  // ---- Excel de docentes y personal con las mismas columnas del archivo de la UGEL ----
+  const COLUMNAS_DOCENTES = ["PROVINCIA", "DISTRITO", "TIPO I.E.", "GESTION", "ZONA", "NIVEL EDUCATIVO", "NOMBRE DE LA INSTITUCION EDUCATIVA", "JEC", "CODIGO DE PLAZA", "TIPO DE TRABAJADOR", "CARGO", "SITUACION LABORAL", "CAT REM", "JORNADA LABORAL", "TIPO DE REGISTRO", "LEY", "CODIGO MODULAR", "APELLIDO PATERNO", "APELLIDO MATERNO", "NOMBRES"];
+  function filaDocenteUGEL(p) {
+    const v = x => xlsValor(x ?? "");
+    return [
+      "CASTILLA", v(p.distritoOriginal || p.distrito), v(p.tipoIE), v(p.gestion), v(p.zonaOriginal || p.zona),
+      v(p.nivelEducativo), v(p.institucionOriginal || p.institucion), v(p.jec), v(p.codigoPlaza), v(p.tipoTrabajador),
+      v(p.cargo), v(p.situacionLaboral), v(p.categoria), v(p.jornada), v(p.tipoRegistro), v(p.regimen),
+      v(p.codigoPersona), v(p.apellidoPaterno), v(p.apellidoMaterno), v(p.nombres)
+    ];
+  }
+  function excelDocentesUGEL(nombreArchivo, personas) {
+    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
+    try {
+      const aoa = [COLUMNAS_DOCENTES, ...(personas || []).map(filaDocenteUGEL)];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const n = COLUMNAS_DOCENTES.length, ultima = aoa.length - 1;
+      ws["!cols"] = COLUMNAS_DOCENTES.map((c, i) => ({ wch: i === 6 ? 42 : i >= 17 ? 22 : Math.min(28, Math.max(12, c.length + 2)) }));
+      ws["!rows"] = [{ hpt: 32 }];
+      ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(1, ultima), c: n - 1 } }) };
+      ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+      const BORDE = { style: "thin", color: { rgb: "404040" } };
+      const bordes = { top: BORDE, bottom: BORDE, left: BORDE, right: BORDE };
+      const hdr = { font: { bold: true, sz: 9, name: "Arial", color: { rgb: "FFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: "00703C" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: bordes };
+      const dato = { font: { sz: 9, name: "Arial" }, alignment: { horizontal: "left", vertical: "center" }, border: bordes };
+      for (let r = 0; r <= ultima; r++) for (let c = 0; c < n; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+        ws[addr].s = r === 0 ? hdr : dato;
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Hoja1");
+      XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error("Error al descargar Excel:", e);
+      aviso("No se pudo descargar el Excel: " + (e && e.message ? e.message : e));
+    }
+  }
   function excelSeccion(i, tipo) {
     const ie = todas[i];
     if (!ie) return;
     const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
     const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
     if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
-    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
+    if (tipo === "docentes") return excelDocentesUGEL(base + "_docentes", (typeof personalVisible !== "undefined" ? personalVisible : []).filter(p => ie.claveUGEL && p.claveUGEL === ie.claveUGEL));
     if (tipo === "estudiantes" && nivelesVerdesIE(ie).length) return excelNivelesVerdes(base + "_estudiantes", [ie], nivelesVerdesIE(ie), []);
     if (tipo === "estudiantes") {
       const e = estudiantesIE(ie);
