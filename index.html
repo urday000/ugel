@@ -2872,6 +2872,98 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     XLSX.utils.book_append_sheet(wb, ws, "Inicial");
     XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
+  // ---- Excel de matrícula por nivel con el formato verde (Inicial, Primaria y Secundaria) ----
+  const NIVELES_VERDES = {
+    Inicial: { ids: ["Distrito", "Código modular", "Institución"], top: "Estudiantes por Edad",
+      grupos: [["3 años", /\b3\b/], ["4 años", /\b4\b/], ["5 años", /\b5\b/]], sub: ["Cant Sec", "Hombres", "Mujeres"] },
+    Primaria: { ids: ["Nombre de IE", "Nivel", "Tipo IE"], top: null,
+      grupos: [["Primero", /primer|\b1\b/], ["Segundo", /segund|\b2\b/], ["Tercero", /tercer|\b3\b/], ["Cuarto", /cuart|\b4\b/], ["Quinto", /quint|\b5\b/], ["Sexto", /sext|\b6\b/]],
+      sub: ["Cant Sec", "Hombres", "Mujeres"] },
+    Secundaria: { ids: ["Nombre de IE", "Nivel", "Tipo IE"], top: "Estudiantes por Grado",
+      grupos: [["Primero", /primer|\b1\b/], ["Segundo", /segund|\b2\b/], ["Tercero", /tercer|\b3\b/], ["Cuarto", /cuart|\b4\b/], ["Quinto", /quint|\b5\b/]],
+      sub: ["Hombres", "Mujeres"] }
+  };
+  // Niveles con datos en una IE (solo los que tienen formato verde)
+  function nivelesVerdesIE(ie) {
+    const set = new Set((ie.matriculaPorNivel || []).map(m => nivelSimpleAG(m.nivel)));
+    return ["Inicial", "Primaria", "Secundaria"].filter(n => set.has(n));
+  }
+  // Escribe una hoja de un nivel: una fila por IE y matrícula, con grados o edades y fila de totales
+  function hojaVerdeNivel(wb, nivel, ies) {
+    const cfg = NIVELES_VERDES[nivel];
+    const num = v => Number(v) || 0;
+    const nId = cfg.ids.length, nNum = 5, nSub = cfg.sub.length;
+    const nCols = nId + nNum + cfg.grupos.length * nSub;
+    const filas = [];
+    ies.forEach(ie => (ie.matriculaPorNivel || []).forEach(m => {
+      if (nivelSimpleAG(m.nivel) !== nivel) return;
+      const det = m.detalle || [];
+      const H = det.reduce((s, d) => s + num(d.hombres), 0);
+      const M = det.reduce((s, d) => s + num(d.mujeres), 0);
+      const S = num(m.secciones) || det.reduce((s, d) => s + num(d.secciones), 0);
+      const ids = nivel === "Inicial"
+        ? [ie.distrito || "", m.codigo || ie.codigo || "", ie.nombre || ""]
+        : [ie.nombre || "", m.nivel || nivel, ie.tipoIE || ""];
+      const fila = [...ids, num(m.matricula) || (H + M), num(m.definitiva), num(m.enProceso), num(m.grados), S];
+      cfg.grupos.forEach(([, rx]) => {
+        const sel = det.filter(d => rx.test(sinTildes(String(d.grado))));
+        const suma = k => sel.reduce((s, d) => s + num(d[k]), 0);
+        cfg.sub.forEach(c => fila.push(c === "Cant Sec" ? suma("secciones") : c === "Hombres" ? suma("hombres") : suma("mujeres")));
+      });
+      filas.push(fila);
+    }));
+    if (!filas.length) return false;
+    const total = Array(nCols).fill("");
+    total[0] = "TOTAL";
+    for (let c = nId; c < nCols; c++) total[c] = filas.reduce((s, f) => s + (Number(f[c]) || 0), 0);
+    const blancos = n => Array(n).fill("");
+    const aoa = [];
+    if (cfg.top) aoa.push([...blancos(nId + nNum), cfg.top, ...blancos(cfg.grupos.length * nSub - 1)]);
+    aoa.push([...blancos(nId + nNum), ...cfg.grupos.flatMap(([t]) => [t, ...blancos(nSub - 1)])]);
+    aoa.push([...cfg.ids, "Total de estudiantes matriculados (*)", "Matrícula Definitiva", "Matrícula En Proceso", "Total Grados", "Total Secciones", ...cfg.grupos.flatMap(() => cfg.sub)]);
+    const H = aoa.length;
+    aoa.push(...filas, total);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const ultima = aoa.length - 1;
+    const merges = [];
+    for (let c = 0; c < nId + nNum; c++) merges.push({ s: { r: 0, c }, e: { r: H - 1, c } });
+    const ini = nId + nNum;
+    let fila0 = 0;
+    if (cfg.top) { merges.push({ s: { r: 0, c: ini }, e: { r: 0, c: nCols - 1 } }); fila0 = 1; }
+    cfg.grupos.forEach((_, k) => merges.push({ s: { r: fila0, c: ini + k * nSub }, e: { r: fila0, c: ini + k * nSub + nSub - 1 } }));
+    ws["!merges"] = merges;
+    ws["!cols"] = [...cfg.ids.map((id, i) => ({ wch: i === 2 ? 42 : 16 })), ...Array(nNum).fill({ wch: 13 }), ...Array(cfg.grupos.length * nSub).fill({ wch: 10 })];
+    ws["!rows"] = Array(H).fill({ hpt: 28 });
+    const BORDE = { style: "thin", color: { rgb: "404040" } };
+    const bordes = { top: BORDE, bottom: BORDE, left: BORDE, right: BORDE };
+    const hdr = { font: { bold: true, sz: 9, name: "Arial", color: { rgb: "FFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: "00703C" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: bordes };
+    const dato = { font: { sz: 9, name: "Arial" }, alignment: { horizontal: "center", vertical: "center" }, border: bordes };
+    const texto = { font: { sz: 9, name: "Arial" }, alignment: { horizontal: "left", vertical: "center", wrapText: true }, border: bordes };
+    const totalEst = { font: { bold: true, sz: 9, name: "Arial" }, fill: { patternType: "solid", fgColor: { rgb: "D9EAD3" } }, alignment: { horizontal: "center", vertical: "center" }, border: bordes };
+    for (let r = 0; r <= ultima; r++) for (let c = 0; c < nCols; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+      if (r < H) ws[addr].s = hdr;
+      else if (r === ultima) ws[addr].s = c < nId ? { ...totalEst, alignment: { horizontal: "left", vertical: "center" } } : totalEst;
+      else ws[addr].s = c < nId ? texto : dato;
+    }
+    XLSX.utils.book_append_sheet(wb, ws, nivel);
+    return true;
+  }
+  // Libro con una hoja verde por nivel y, opcionalmente, hojas normales adicionales
+  function excelNivelesVerdes(nombreArchivo, ies, niveles, extras) {
+    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
+    try {
+      const wb = XLSX.utils.book_new();
+      niveles.forEach(n => hojaVerdeNivel(wb, n, ies));
+      (extras || []).forEach(h => xlsHoja(wb, h.nombre, h.titulo, h.filas.length ? h.filas : [{ aviso: "Sin datos registrados" }]));
+      if (!wb.SheetNames.length) { aviso("No hay datos de matrícula para descargar."); return; }
+      XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error("Error al descargar Excel:", e);
+      aviso("No se pudo descargar el Excel: " + (e && e.message ? e.message : e));
+    }
+  }
   function excelSeccion(i, tipo) {
     const ie = todas[i];
     if (!ie) return;
@@ -2879,7 +2971,7 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
     if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
     if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
-    if (tipo === "estudiantes" && esInicialIE(ie)) return excelInicialVerde(base + "_inicial", ie);
+    if (tipo === "estudiantes" && nivelesVerdesIE(ie).length) return excelNivelesVerdes(base + "_estudiantes", [ie], nivelesVerdesIE(ie), []);
     if (tipo === "estudiantes") {
       const e = estudiantesIE(ie);
       return excelDescargar(base + "_estudiantes", [
@@ -2899,10 +2991,9 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
       analisisFilasIE(x.ie, x.i).forEach(f => detalle.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), ...f }));
       matriculaFormatoUGEL(x.ie).forEach(f => { if (f.distrito !== "TOTAL") matricula.push(f); });
     });
-    excelDescargar("Analisis_general", [
+    excelNivelesVerdes("Analisis_general", lista.map(x => x.ie), ["Inicial", "Primaria", "Secundaria"], [
       { nombre: "Resumen por IE", titulo: "Resumen del análisis por institución", filas: resumen },
-      { nombre: "Detalle por grado", titulo: "Análisis por grado de todas las instituciones", filas: detalle },
-      { nombre: "Matrícula formato UGEL", titulo: "Matrícula de todas las instituciones (formato UGEL)", filas: matricula }
+      { nombre: "Detalle por grado", titulo: "Análisis por grado de todas las instituciones", filas: detalle }
     ]);
   }
   function pintar() {
