@@ -2917,10 +2917,16 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     total[0] = "TOTAL";
     for (let c = nId; c < nCols; c++) total[c] = filas.reduce((s, f) => s + (Number(f[c]) || 0), 0);
     const blancos = n => Array(n).fill("");
+    // Las etiquetas de las columnas combinadas van en la primera fila (la combinación las cubre todas)
+    const etiquetas = [...cfg.ids, "Total de estudiantes matriculados (*)", "Matrícula Definitiva", "Matrícula En Proceso", "Total Grados", "Total Secciones"];
     const aoa = [];
-    if (cfg.top) aoa.push([...blancos(nId + nNum), cfg.top, ...blancos(cfg.grupos.length * nSub - 1)]);
-    aoa.push([...blancos(nId + nNum), ...cfg.grupos.flatMap(([t]) => [t, ...blancos(nSub - 1)])]);
-    aoa.push([...cfg.ids, "Total de estudiantes matriculados (*)", "Matrícula Definitiva", "Matrícula En Proceso", "Total Grados", "Total Secciones", ...cfg.grupos.flatMap(() => cfg.sub)]);
+    if (cfg.top) {
+      aoa.push([...etiquetas, cfg.top, ...blancos(cfg.grupos.length * nSub - 1)]);
+      aoa.push([...blancos(nId + nNum), ...cfg.grupos.flatMap(([t]) => [t, ...blancos(nSub - 1)])]);
+    } else {
+      aoa.push([...etiquetas, ...cfg.grupos.flatMap(([t]) => [t, ...blancos(nSub - 1)])]);
+    }
+    aoa.push([...blancos(nId + nNum), ...cfg.grupos.flatMap(() => cfg.sub)]);
     const H = aoa.length;
     aoa.push(...filas, total);
     const ws = XLSX.utils.aoa_to_sheet(aoa);
