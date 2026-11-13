@@ -2221,7 +2221,7 @@ tr:hover .thumb{ transform:scale(1.25); }
   }
   const PORTADA_DEFAULT = {
     logo: "", fondo: "", fondoOpacidad: 70, altura: 520,
-    colorPrincipal: "#0f321e", colorAcento: "#c8a34b",
+    colorPrincipal: "#0A2A66", colorAcento: "#F2B632",
     eyebrow: "Municipalidad Provincial de Castilla · Aplao",
     titulo: "Directorio de instituciones educativas",
     subtitulo: "Consulta las instituciones de la provincia de Castilla: ubicación, datos, personal y anexos.",
@@ -2560,6 +2560,9 @@ tr:hover .thumb{ transform:scale(1.25); }
     try {
       const doc = await db.collection("config").doc("portada").get();
       portadaCfg = { ...PORTADA_DEFAULT, ...(doc.exists ? doc.data() : {}) };
+      const legado = { "#0f321e": "#0A2A66", "#c8a34b": "#F2B632" };
+      portadaCfg.colorPrincipal = legado[portadaCfg.colorPrincipal] || portadaCfg.colorPrincipal;
+      portadaCfg.colorAcento = legado[portadaCfg.colorAcento] || portadaCfg.colorAcento;
     } catch (e) {
       portadaCfg = { ...PORTADA_DEFAULT };
       aviso("No se pudo leer la portada: " + e.message);
@@ -2569,86 +2572,141 @@ tr:hover .thumb{ transform:scale(1.25); }
   }
   const opcionesAccion = sel => [["mapa", "Abrir el mapa"], ["distritos", "Ir a los distritos"], ["url", "Abrir un enlace"]]
     .map(([v, t]) => `<option value="${v}" ${sel === v ? "selected" : ""}>${t}</option>`).join("");
-  function vPortada() {
-    if (portadaCfg === null) return `<h1 class="titulo">Portada</h1><p class="vacio">Cargando…</p>`;
-    const c = portadaCfg;
-    return `
-      <h1 class="titulo">Portada de la página principal</h1>
-      <p class="sub">Cambia el logo, el fondo, los textos y los botones. Al guardar, la portada se actualiza en la página principal al pulsar “Actualizar datos”.</p>
-      <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
-      <form data-form="portada" class="panel" style="margin:0">
-        <h3>Logo</h3>
-        <div class="grid">
-          <label>Logo (enlace de la imagen)<input name="logo" value="${esc(c.logo)}" placeholder="Vacío = logo de la UGEL"></label>
-        </div>
-        <h3>Fondo</h3>
-        <div class="grid">
-          <label>Imagen de fondo (enlace)<input name="fondo" value="${esc(c.fondo)}" placeholder="Vacío = color sólido"></label>
-          <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
-          <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
-          <label>Color principal<input name="colorPrincipal" type="color" value="${esc(c.colorPrincipal)}"></label>
-          <label>Color de acento (botón principal)<input name="colorAcento" type="color" value="${esc(c.colorAcento)}"></label>
-        </div>
-        <h3>Textos</h3>
-        <label>Etiqueta superior<input name="eyebrow" value="${esc(c.eyebrow)}"></label>
-        <label style="margin-top:10px">Título<input name="titulo" value="${esc(c.titulo)}"></label>
-        <label style="margin-top:10px">Subtítulo<textarea name="subtitulo">${esc(c.subtitulo)}</textarea></label>
-        <label style="margin-top:10px">Lema (línea destacada bajo el subtítulo)<input name="lema" value="${esc(c.lema || "")}"></label>
-        <h3>Botones</h3>
-        <label class="check"><input type="checkbox" name="mostrarBotones" ${c.mostrarBotones ? "checked" : ""} style="width:auto"> Mostrar botones</label>
-        <div class="grid" style="margin-top:8px">
-          <label>Botón 1 - texto<input name="boton1Texto" value="${esc(c.boton1Texto)}"></label>
-          <label>Botón 1 - acción<select name="boton1Accion">${opcionesAccion(c.boton1Accion)}</select></label>
-          <label>Botón 1 - enlace (solo si la acción es “Abrir un enlace”)<input name="boton1Url" value="${esc(c.boton1Url)}"></label>
-          <label>Botón 2 - texto<input name="boton2Texto" value="${esc(c.boton2Texto)}"></label>
-          <label>Botón 2 - acción<select name="boton2Accion">${opcionesAccion(c.boton2Accion)}</select></label>
-          <label>Botón 2 - enlace (solo si la acción es “Abrir un enlace”)<input name="boton2Url" value="${esc(c.boton2Url)}"></label>
-        </div>
-        <div class="acciones">
-          <button type="button" class="primario" data-a="portada-guardar">Guardar portada</button>
-          <button type="button" data-a="portada-restaurar">Restaurar valores originales</button>
-        </div>
-      </form>
-      <div class="panel" style="margin:0">
-        <h3>Vista previa</h3>
-        <div style="position:relative;overflow:hidden;border-radius:18px;padding:28px;min-height:${Math.min(520, Math.max(300, Number(c.altura) || 520)) * 0.6}px;background:${esc(c.colorPrincipal)};color:#fff">
-          ${c.fondo ? `<div style="position:absolute;inset:0;background:url('${esc(c.fondo)}') center/cover"></div>` : ""}
-          <div style="position:absolute;inset:0;background:${esc(c.colorPrincipal)};opacity:${Math.min(1, Math.max(0, Number(c.fondoOpacidad) / 100))}"></div>
-          <div style="position:relative">
-            ${c.eyebrow ? `<span style="display:inline-block;background:rgba(255,255,255,.14);padding:5px 10px;border-radius:999px;font-size:.8rem">${esc(c.eyebrow)}</span>` : ""}
-            <h2 style="color:#fff;font-size:1.7rem;margin:14px 0 8px">${esc(c.titulo)}</h2>
-            <p style="color:#e2eee5;margin:0">${esc(c.subtitulo)}</p>
-            ${c.mostrarBotones ? `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-              ${c.boton1Texto ? `<span style="background:${esc(c.colorAcento)};color:#1c170b;padding:8px 12px;border-radius:10px;font-weight:700">${esc(c.boton1Texto)}</span>` : ""}
-              ${c.boton2Texto ? `<span style="background:rgba(255,255,255,.12);padding:8px 12px;border-radius:10px;font-weight:700">${esc(c.boton2Texto)}</span>` : ""}
-            </div>` : ""}
-          </div>
-        </div>
-      </div>
-      </div>`;
-  }
-  async function guardarPortada() {
+  // Lee el formulario de la portada (valores sin guardar)
+  function leerFormPortada() {
     const f = document.querySelector('form[data-form="portada"]');
-    if (!f) return;
+    if (!f) return null;
     const fd = new FormData(f);
     const get = k => String(fd.get(k) ?? "").trim();
-    const datos = {
+    return {
       logo: get("logo"), fondo: get("fondo"),
       fondoOpacidad: Math.min(100, Math.max(0, Number(get("fondoOpacidad")) || 0)),
       altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
-      colorPrincipal: get("colorPrincipal") || "#0f321e",
-      colorAcento: get("colorAcento") || "#c8a34b",
+      colorPrincipal: get("colorPrincipal") || "#0A2A66",
+      colorAcento: get("colorAcento") || "#F2B632",
       eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
       boton2Texto: get("boton2Texto"), boton2Accion: get("boton2Accion"), boton2Url: get("boton2Url"),
       mostrarBotones: !!f.querySelector('input[name="mostrarBotones"]')?.checked
     };
+  }
+  // Revisión antes de guardar: enlaces válidos y textos obligatorios
+  function errorPortada(d) {
+    const enlaceOk = u => !u || /^(https?:\/\/|\/|\.\/|\.\.\/)/i.test(u);
+    if (!d.titulo) return "El título no puede quedar vacío.";
+    if (!enlaceOk(d.logo)) return "El logo debe ser un enlace que empiece con https://";
+    if (!enlaceOk(d.fondo)) return "La imagen de fondo debe ser un enlace que empiece con https://";
+    if (!enlaceOk(d.boton1Url) || !enlaceOk(d.boton2Url)) return "Los enlaces de los botones deben empezar con https://";
+    if (d.mostrarBotones && d.boton1Accion === "url" && !d.boton1Url) return "El botón 1 necesita un enlace, porque su acción es “Abrir un enlace”.";
+    if (d.mostrarBotones && d.boton2Accion === "url" && !d.boton2Url) return "El botón 2 necesita un enlace, porque su acción es “Abrir un enlace”.";
+    return "";
+  }
+  // Envía la configuración a la vista previa (la misma página principal)
+  function enviarPortadaVista() {
+    const cfg = leerFormPortada();
+    const fr = document.getElementById("portadaFrame");
+    if (cfg && fr && fr.contentWindow) fr.contentWindow.postMessage({ tipo: "portada-preview", cfg }, location.origin);
+  }
+  function marcarPortadaSinGuardar(sinGuardar) {
+    const el = document.getElementById("portadaEstado");
+    if (!el) return;
+    el.textContent = sinGuardar ? "Cambios sin guardar" : "Todos los cambios guardados";
+    el.style.color = sinGuardar ? "#b45309" : "#0A6E3A";
+  }
+  function vPortada() {
+    if (portadaCfg === null) return `<h1 class="titulo">Portada</h1><p class="vacio">Cargando…</p>`;
+    const c = portadaCfg;
+    const campo = (nombre, etiqueta, valor, extra = "") => `<label>${etiqueta}<input name="${nombre}" value="${esc(valor)}" ${extra}></label>`;
+    const color = (nombre, etiqueta, valor) => `<label class="color-campo">${etiqueta}<span class="color-caja"><input type="color" name="${nombre}" value="${esc(valor)}"><code>${esc(valor)}</code></span></label>`;
+    return `
+      <style>
+        .portada-edit { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:18px; align-items:start; }
+        @media (max-width: 960px) { .portada-edit { grid-template-columns:1fr; } }
+        .portada-edit .bloque { margin-bottom:6px; }
+        .portada-edit h3 { margin:16px 0 8px; }
+        .color-caja { display:flex; align-items:center; gap:10px; }
+        .color-caja input[type=color] { width:56px; height:36px; padding:2px; border-radius:10px; cursor:pointer; }
+        .color-caja code { font-size:.85rem; color:#4D6585; }
+        .portada-vista-barra { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+        .portada-vista-barra button.activo { background:#1456B8; color:#fff; }
+        #portadaFrame { width:100%; height:620px; border:1px solid #CFE6F3; border-radius:14px; background:#fff; transition:width .25s; }
+        .portada-estado { font-weight:700; font-size:.9rem; }
+      </style>
+      <h1 class="titulo">Portada de la página principal</h1>
+      <p class="sub">Los cambios se ven al instante en la vista previa, que es la misma página principal. Pulsa <b>Guardar portada</b> para publicarlos y luego “Actualizar datos” en la página principal.</p>
+      <div class="portada-edit">
+        <form data-form="portada" class="panel" style="margin:0">
+          <div class="bloque">
+            <h3>Logo y fondo</h3>
+            <div class="grid">
+              ${campo("logo", "Logo (enlace de la imagen)", c.logo, 'placeholder="Vacío = logo de la UGEL"')}
+              ${campo("fondo", "Imagen de fondo (enlace)", c.fondo, 'placeholder="Vacío = color sólido"')}
+              <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
+              <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
+            </div>
+          </div>
+          <div class="bloque">
+            <h3>Colores</h3>
+            <div class="grid">
+              ${color("colorPrincipal", "Color principal (fondo)", c.colorPrincipal)}
+              ${color("colorAcento", "Color del botón principal", c.colorAcento)}
+            </div>
+          </div>
+          <div class="bloque">
+            <h3>Textos</h3>
+            ${campo("eyebrow", "Etiqueta superior", c.eyebrow)}
+            <label style="margin-top:10px">Título<input name="titulo" value="${esc(c.titulo)}"></label>
+            <label style="margin-top:10px">Subtítulo<textarea name="subtitulo">${esc(c.subtitulo)}</textarea></label>
+            <label style="margin-top:10px">Lema (línea destacada)<input name="lema" value="${esc(c.lema || "")}"></label>
+          </div>
+          <div class="bloque">
+            <h3>Botones</h3>
+            <label class="check"><input type="checkbox" name="mostrarBotones" ${c.mostrarBotones ? "checked" : ""} style="width:auto"> Mostrar botones</label>
+            <div class="grid" style="margin-top:8px">
+              ${campo("boton1Texto", "Botón 1 - texto", c.boton1Texto)}
+              <label>Botón 1 - acción<select name="boton1Accion">${opcionesAccion(c.boton1Accion)}</select></label>
+              ${campo("boton1Url", "Botón 1 - enlace (si la acción es “Abrir un enlace”)", c.boton1Url, 'placeholder="https://…"')}
+              ${campo("boton2Texto", "Botón 2 - texto", c.boton2Texto)}
+              <label>Botón 2 - acción<select name="boton2Accion">${opcionesAccion(c.boton2Accion)}</select></label>
+              ${campo("boton2Url", "Botón 2 - enlace (si la acción es “Abrir un enlace”)", c.boton2Url, 'placeholder="https://…"')}
+            </div>
+          </div>
+          <div class="acciones">
+            <button type="button" class="primario" data-a="portada-guardar">Guardar portada</button>
+            <button type="button" data-a="portada-restaurar">Restaurar valores originales</button>
+          </div>
+          <p class="portada-estado" id="portadaEstado" style="color:#0A6E3A;margin-top:10px">Todos los cambios guardados</p>
+        </form>
+        <div class="panel" style="margin:0">
+          <div class="portada-vista-barra">
+            <strong>Vista previa en vivo</strong>
+            <span style="flex:1"></span>
+            <button type="button" class="activo" data-ancho="100%" data-a="portada-vista-ancho">Escritorio</button>
+            <button type="button" data-ancho="390px" data-a="portada-vista-ancho">Celular</button>
+          </div>
+          <iframe id="portadaFrame" src="index.html?vista=portada" title="Vista previa de la portada"></iframe>
+        </div>
+      </div>`;
+  }
+  async function guardarPortada() {
+    const datos = leerFormPortada();
+    if (!datos) return;
+    const error = errorPortada(datos);
+    if (error) { aviso(error); return; }
     await db.collection("config").doc("portada").set(datos);
     portadaCfg = { ...PORTADA_DEFAULT, ...datos };
     pintarLogoTop();
+    marcarPortadaSinGuardar(false);
     aviso("Portada guardada. Pulsa “Actualizar datos” en la página principal para verla.", true);
-    pintarAdmin();
   }
+  // Interacción de la pestaña Portada: vista previa en vivo y aviso de cambios sin guardar
+  document.addEventListener("input", e => {
+    if (e.target.closest && e.target.closest('form[data-form="portada"]')) { marcarPortadaSinGuardar(true); enviarPortadaVista(); }
+  });
+  document.addEventListener("change", e => {
+    if (e.target.closest && e.target.closest('form[data-form="portada"]')) { marcarPortadaSinGuardar(true); enviarPortadaVista(); }
+  });
+  document.addEventListener("load", e => { if (e.target && e.target.id === "portadaFrame") enviarPortadaVista(); }, true);
 
   function vPersonal() {
     if (personalCache === null) return `<h1 class="titulo">Personal</h1><p class="vacio">Cargando…</p>`;
@@ -3138,6 +3196,11 @@ tr:hover .thumb{ transform:scale(1.25); }
       }
       else if (a === "det-quitar") b.closest("tr.fila-det")?.remove();
       else if (a === "portada-guardar") await guardarPortada();
+      else if (a === "portada-vista-ancho") {
+        const fr = document.getElementById("portadaFrame");
+        if (fr) fr.style.width = b.dataset.ancho;
+        document.querySelectorAll('[data-a="portada-vista-ancho"]').forEach(x => x.classList.toggle("activo", x === b));
+      }
       else if (a === "portada-restaurar") {
         if (!confirm("¿Restaurar la portada a sus valores originales? Se perderán los cambios guardados.")) return;
         portadaCfg = { ...PORTADA_DEFAULT };
