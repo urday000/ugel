@@ -2221,7 +2221,7 @@ tr:hover .thumb{ transform:scale(1.25); }
   }
   const PORTADA_DEFAULT = {
     logo: "", fondo: "", fondoOpacidad: 70, altura: 520,
-    colorPrincipal: "#0f321e", colorAcento: "#F2B632",
+    colorPrincipal: "#06281a", colorAcento: "#ffc531",
     eyebrow: "Municipalidad Provincial de Castilla · Aplao",
     titulo: "Directorio de instituciones educativas",
     subtitulo: "Consulta las instituciones de la provincia de Castilla: ubicación, datos, personal y anexos.",
@@ -2556,7 +2556,30 @@ tr:hover .thumb{ transform:scale(1.25); }
     aviso("Parámetros guardados. La página principal los usará al actualizarse.", true);
     pintarAdmin();
   }
+  // Colores predominantes del sitio (config/tema)
+  const TEMA_DEFAULT = { principal: "#2DB7E8", profundo: "#0A2A66", claro: "#EEF8FD", acento: "#F2B632", texto: "#0E2347" };
+  let temaCfg = null;
+  function aplicarTemaPanel(t) {
+    const x = { ...TEMA_DEFAULT, ...(t || {}) };
+    const st = document.documentElement.style;
+    st.setProperty("--bg", x.claro); st.setProperty("--text", x.texto);
+    st.setProperty("--accent", x.profundo); st.setProperty("--accent-2", x.principal);
+    st.setProperty("--gold", x.acento); st.setProperty("--accent-soft", x.claro);
+    st.setProperty("--grad-azul", `linear-gradient(120deg, ${x.profundo} 0%, ${x.principal} 100%)`);
+  }
+  function leerTema() {
+    const f = document.querySelector('form[data-form="portada"]');
+    if (!f) return null;
+    const v = n => String(new FormData(f).get(n) ?? "").trim() || null;
+    return { principal: v("tema_principal") || TEMA_DEFAULT.principal, profundo: v("tema_profundo") || TEMA_DEFAULT.profundo,
+      claro: v("tema_claro") || TEMA_DEFAULT.claro, acento: v("tema_acento") || TEMA_DEFAULT.acento, texto: v("tema_texto") || TEMA_DEFAULT.texto };
+  }
   async function cargarPortadaAdm() {
+    try {
+      const t = await db.collection("config").doc("tema").get();
+      temaCfg = { ...TEMA_DEFAULT, ...(t.exists ? t.data() : {}) };
+    } catch (e) { temaCfg = { ...TEMA_DEFAULT }; }
+    aplicarTemaPanel(temaCfg);
     try {
       const doc = await db.collection("config").doc("portada").get();
       portadaCfg = { ...PORTADA_DEFAULT, ...(doc.exists ? doc.data() : {}) };
@@ -2579,8 +2602,8 @@ tr:hover .thumb{ transform:scale(1.25); }
       logo: get("logo"), fondo: get("fondo"),
       fondoOpacidad: Math.min(100, Math.max(0, Number(get("fondoOpacidad")) || 0)),
       altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
-      colorPrincipal: get("colorPrincipal") || "#0f321e",
-      colorAcento: get("colorAcento") || "#F2B632",
+      colorPrincipal: get("colorPrincipal") || "#06281a",
+      colorAcento: get("colorAcento") || "#ffc531",
       eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
       boton2Texto: get("boton2Texto"), boton2Accion: get("boton2Accion"), boton2Url: get("boton2Url"),
@@ -2602,7 +2625,9 @@ tr:hover .thumb{ transform:scale(1.25); }
   function enviarPortadaVista() {
     const cfg = leerFormPortada();
     const fr = document.getElementById("portadaFrame");
-    if (cfg && fr && fr.contentWindow) fr.contentWindow.postMessage({ tipo: "portada-preview", cfg }, location.origin);
+    const tema = leerTema();
+    if (cfg && fr && fr.contentWindow) fr.contentWindow.postMessage({ tipo: "portada-preview", cfg, tema }, location.origin);
+    if (tema) aplicarTemaPanel(tema);
   }
   function marcarPortadaSinGuardar(sinGuardar) {
     const el = document.getElementById("portadaEstado");
@@ -2633,6 +2658,17 @@ tr:hover .thumb{ transform:scale(1.25); }
       <p class="sub">Los cambios se ven al instante en la vista previa, que es la misma página principal. Pulsa <b>Guardar portada</b> para publicarlos y luego “Actualizar datos” en la página principal.</p>
       <div class="portada-edit">
         <form data-form="portada" class="panel" style="margin:0">
+          <div class="bloque">
+            <h3>Colores del sitio</h3>
+            <p class="nota">Estos colores se usan en toda la página principal y en este panel. El celeste es el color predominante.</p>
+            <div class="grid">
+              ${color("tema_principal", "Color predominante (celeste)", (temaCfg || TEMA_DEFAULT).principal)}
+              ${color("tema_profundo", "Azul profundo (títulos y botones)", (temaCfg || TEMA_DEFAULT).profundo)}
+              ${color("tema_claro", "Fondo de las páginas", (temaCfg || TEMA_DEFAULT).claro)}
+              ${color("tema_acento", "Color de acento (botones dorados)", (temaCfg || TEMA_DEFAULT).acento)}
+              ${color("tema_texto", "Color del texto", (temaCfg || TEMA_DEFAULT).texto)}
+            </div>
+          </div>
           <div class="bloque">
             <h3>Logo y fondo</h3>
             <div class="grid">
@@ -2691,6 +2727,8 @@ tr:hover .thumb{ transform:scale(1.25); }
     const error = errorPortada(datos);
     if (error) { aviso(error); return; }
     await db.collection("config").doc("portada").set(datos);
+    const tema = leerTema();
+    if (tema) { await db.collection("config").doc("tema").set(tema); temaCfg = tema; aplicarTemaPanel(tema); }
     portadaCfg = { ...PORTADA_DEFAULT, ...datos };
     pintarLogoTop();
     marcarPortadaSinGuardar(false);
@@ -3203,6 +3241,7 @@ tr:hover .thumb{ transform:scale(1.25); }
         portadaCfg = { ...PORTADA_DEFAULT };
         pintarLogoTop();
         await db.collection("config").doc("portada").set(PORTADA_DEFAULT);
+        await db.collection("config").doc("tema").set(TEMA_DEFAULT); temaCfg = { ...TEMA_DEFAULT }; aplicarTemaPanel(temaCfg);
         aviso("Portada restaurada.", true);
         pintarAdmin();
       }
