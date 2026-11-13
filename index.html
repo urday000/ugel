@@ -1781,6 +1781,11 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
 
   const app = document.getElementById("app");
   const avisoEl = document.getElementById("aviso");
+  // Muestra mensajes en el aviso de la página (faltaba esta función: las descargas fallaban sin mostrar nada)
+  function aviso(texto) {
+    if (avisoEl) { avisoEl.textContent = texto; avisoEl.className = "aviso"; avisoEl.hidden = false; }
+    else alert(texto);
+  }
   let todas = [];     // instituciones (el índice de este arreglo identifica cada IE)
   let distritos = [];
   let fuente = "Cargando…";
