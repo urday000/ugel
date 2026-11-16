@@ -2417,119 +2417,11 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
   app.addEventListener("change", e => { if (["pgDistrito", "pgNivel", "pgCat"].includes(e.target.id)) aplicarPersonalGeneral(); });
   // ---------- Descargas a Excel ----------
   // Excel según la parte de la ficha donde se pulsa: identificación, docentes, estudiantes o análisis.
-  function excelSeccion(i, tipo) {
-    const ie = todas[i];
-    if (!ie) return;
-    const sn = v => (v === undefined || v === null) ? "" : v;
-    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
-    if (tipo === "identificacion") {
-      const filas = [["Nombre", ie.nombre], ["Distrito", ie.distrito], ["Dirección", ie.direccion], ["Zona", ie.zona],
-        ["Gestión", ie.gestion], ["Tipo de I.E.", ie.tipoIE], ["Condición", ie.condicion], ["Director", ie.director],
-        ["Subdirector", ie.subdirector], ["Códigos modulares", (ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" · ")],
-        ["Estudiantes", sn(ie.estudiantes)], ["Latitud", sn(ie.latitud)], ["Longitud", sn(ie.longitud)]]
-        .map(([campo, valor]) => ({ campo, valor: sn(valor) }));
-      return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", filas }]);
-    }
-    if (tipo === "docentes") {
-      const pv = Array.isArray(personalVisible) ? personalVisible : [];
-      const filas = pv.filter(p => ie.claveUGEL && p.claveUGEL === ie.claveUGEL).map(p => ({
-        codigo_plaza: sn(p.codigoPlaza), codigo_personal: sn(p.codigoPersona), apellidos_nombres: sn(p.nombreCompleto),
-        cargo: sn(p.cargo), tipo_trabajador: sn(p.tipoTrabajador), nivel: sn(p.nivelEducativo), modalidad: modalidadDe ? modalidadDe(p.nivelEducativo) : "",
-        situacion: sn(p.situacionLaboral), categoria: sn(p.categoria), jornada: sn(p.jornada), regimen: sn(p.regimen)
-      }));
-      return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", filas }]);
-    }
-    if (tipo === "estudiantes") {
-      const niveles = [], matricula = [];
-      (ie.matriculaPorNivel || []).forEach(m => {
-        niveles.push({ nivel: sn(m.nivel), codigo: sn(m.codigo), matricula: sn(m.matricula), definitiva: sn(m.definitiva), en_proceso: sn(m.enProceso), grados: sn(m.grados) });
-        (m.detalle || []).forEach(d => matricula.push({ nivel: sn(m.nivel), codigo: sn(m.codigo), grado_o_edad: sn(d.grado), secciones: sn(d.secciones), hombres: sn(d.hombres), mujeres: sn(d.mujeres), total: sn(d.total) }));
-      });
-      return excelDescargar(base + "_estudiantes", [{ nombre: "Totales por nivel", filas: niveles }, { nombre: "Estudiantes por grado", filas: matricula }]);
-    }
-    if (tipo === "analisis") {
-      const r = resumenDeIE(i);
-      const filas = r.grados.map(g => ({ nivel: g.nivel, grado: g.grado, resultado: g.color, alcance: g.alcance }));
-      filas.push({ nivel: "TOTAL", grado: "", resultado: `Verde ${r.cuenta.verde} · Amarillo ${r.cuenta.amarillo} · Rojo ${r.cuenta.rojo} · Gris ${r.cuenta.gris}`, alcance: "" });
-      return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", filas }]);
-    }
-  }
-  function excelDescargar(nombreArchivo, hojas) {
-    if (typeof XLSX === "undefined") { aviso("No se cargó la librería de Excel. Recarga la página con Ctrl+F5."); return; }
-    const wb = XLSX.utils.book_new();
-    hojas.forEach(h => {
-      const filas = h.filas.length ? h.filas : [{ aviso: "Sin datos" }];
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), h.nombre);
-    });
-    XLSX.writeFile(wb, `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }
-  // Ficha de una IE: identificación, matrícula, personal visible y análisis por grado.
-  function fichaExcel(i) {
-    const ie = todas[i];
-    if (!ie) return;
-    const sn = v => (v === undefined || v === null) ? "" : v;
-    const ident = [
-      ["Nombre", ie.nombre], ["Distrito", ie.distrito], ["Dirección", ie.direccion], ["Zona", ie.zona],
-      ["Gestión", ie.gestion], ["Tipo de I.E.", ie.tipoIE], ["Condición", ie.condicion], ["Director", ie.director],
-      ["Subdirector", ie.subdirector], ["Códigos modulares", (ie.matriculaPorNivel || []).map(m => m.codigo).filter(Boolean).join(" · ") || (ie.codigosModulares || []).join(" · ")],
-      ["Estudiantes", sn(ie.estudiantes)], ["Docentes (ficha)", sn(ie.docentes)], ["Latitud", sn(ie.latitud)], ["Longitud", sn(ie.longitud)]
-    ].map(([campo, valor]) => ({ campo, valor: sn(valor) }));
-    const matricula = [];
-    (ie.matriculaPorNivel || []).forEach(m => (m.detalle || []).forEach(d => matricula.push({
-      nivel: sn(m.nivel), codigo: sn(m.codigo), grado_o_edad: sn(d.grado), secciones: sn(d.secciones),
-      hombres: sn(d.hombres), mujeres: sn(d.mujeres), total: sn(d.total)
-    })));
-    const pers = (typeof personalVisible !== "undefined" ? personalVisible : []).filter(p => ie.claveUGEL && p.claveUGEL === ie.claveUGEL).map(p => ({
-      codigo_plaza: sn(p.codigoPlaza), codigo_personal: sn(p.codigoPersona), apellidos_nombres: sn(p.nombreCompleto),
-      cargo: sn(p.cargo), nivel: sn(p.nivelEducativo), situacion: sn(p.situacionLaboral), categoria: sn(p.categoria),
-      jornada: sn(p.jornada), regimen: sn(p.regimen)
-    }));
-    const r = resumenDeIE(i);
-    const analisis = r.grados.map(g => ({ nivel: g.nivel, grado: g.grado, resultado: g.color, alcance: g.alcance }));
-    analisis.push({ nivel: "TOTAL", grado: "", resultado: `Verde ${r.cuenta.verde} · Amarillo ${r.cuenta.amarillo} · Rojo ${r.cuenta.rojo} · Gris ${r.cuenta.gris}`, alcance: "" });
-    excelDescargar("IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40), [
-      { nombre: "Identificación", filas: ident }, { nombre: "Matrícula por grado", filas: matricula },
-      { nombre: "Personal visible", filas: pers }, { nombre: "Análisis", filas: analisis }
-    ]);
-  }
-  function personalGeneralExcel() {
-    const pv = Array.isArray(personalVisible) ? personalVisible : [];
-    excelDescargar("Personal_general", [{ nombre: "Personal visible", filas: pv.map(p => ({
-      institucion: nombreIEPersonal(p), distrito: sn2(p.distritoOriginal || p.distrito), nivel: sn2(p.nivelEducativo),
-      codigo_plaza: sn2(p.codigoPlaza), codigo_personal: sn2(p.codigoPersona), apellidos_nombres: sn2(p.nombreCompleto),
-      cargo: sn2(p.cargo), situacion: sn2(p.situacionLaboral), categoria: sn2(p.categoria), jornada: sn2(p.jornada), regimen: sn2(p.regimen)
-    })) }]);
-  }
-  function sn2(v) { return (v === undefined || v === null) ? "" : v; }
+      // Ficha de una IE: identificación, matrícula, personal visible y análisis por grado.
+      function sn2(v) { return (v === undefined || v === null) ? "" : v; }
   // ---------- Análisis general: resumen del análisis de todas las IE ----------
   // Usa la misma ficha de cada IE y toma su pestaña 6 (Resumen), para que los números coincidan con la ficha.
-  function resumenDeIE(i) {
-    const prevRac = estado.racNivel;
-    estado.racNivel = null;
-    let html = "";
-    try { html = vistaFicha(i); } finally { estado.racNivel = prevRac; }
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    const colores = ["verde", "amarillo", "rojo", "gris"];
-    const cuenta = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
-    const grados = [];
-    const sec6 = div.querySelectorAll(".cuadro")[5];
-    if (sec6) {
-      sec6.querySelectorAll(".rac-resumen-total .rac-pill").forEach(p => {
-        const k = colores.find(c => p.classList.contains(c));
-        if (k) cuenta[k] = Number((p.textContent.match(/\d+/) || [0])[0]);
-      });
-      sec6.querySelectorAll("tbody tr").forEach(tr => {
-        const td = tr.querySelectorAll("td");
-        if (td.length < 4) return;
-        const pill = td[2].querySelector(".rac-pill");
-        const color = (pill && colores.find(c => pill.classList.contains(c))) || "gris";
-        grados.push({ nivel: td[0].textContent, grado: td[1].textContent, color, alcance: td[3].textContent });
-      });
-    }
-    return { cuenta, grados };
-  }
-  // Agrupa los grados de una IE por nivel educativo (Inicial, Primaria, Secundaria).
+    // Agrupa los grados de una IE por nivel educativo (Inicial, Primaria, Secundaria).
   function nivelSimpleAG(n) {
     const u = sinTildes(n || "");
     if (u.includes("inicial")) return "Inicial";
@@ -2595,18 +2487,7 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
   }
   app.addEventListener("input", e => { if (e.target.id === "agBuscar") aplicarAnalisisGeneral(); });
   app.addEventListener("change", e => { if (e.target.id === "agDistrito" || e.target.id === "agNivel") aplicarAnalisisGeneral(); });
-  function analisisGeneralExcel() {
-    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
-    const resumen = [], detalle = [];
-    lista.forEach(x => {
-      const r = resumenDeIE(x.i);
-      const niv = porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ");
-      resumen.push({ institucion: sn2(x.ie.nombre), distrito: sn2(x.ie.distrito), niveles: niv, verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length });
-      r.grados.forEach(g => detalle.push({ institucion: sn2(x.ie.nombre), distrito: sn2(x.ie.distrito), nivel: g.nivel, grado: g.grado, resultado: g.color, alcance: g.alcance }));
-    });
-    excelDescargar("Analisis_general", [{ nombre: "Resumen por IE", filas: resumen }, { nombre: "Detalle por grado", filas: detalle }]);
-  }
-  // ================= Descargas a Excel (completas y con formato) =================
+    // ================= Descargas a Excel (completas y con formato) =================
   function xlsPretty(k) {
     const s = String(k).replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").trim();
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -2686,43 +2567,14 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
       const o = {}; Object.entries(p).forEach(([k, v]) => { if (!k.startsWith("_") && k !== "id") o[xlsPretty(k)] = xlsValor(v); }); return o;
     });
   }
-  function estudiantesIE(ie) {
-    const totales = [], grados = [];
-    (ie.matriculaPorNivel || []).forEach(m => {
-      const { detalle, ...resto } = m;
-      totales.push(Object.fromEntries(Object.entries(resto).map(([k, v]) => [xlsPretty(k), xlsValor(v)])));
-      (detalle || []).forEach(d => grados.push({ nivel: xlsValor(m.nivel), codigo_modular: xlsValor(m.codigo), grado_o_edad: xlsValor(d.grado), secciones: xlsValor(d.secciones), hombres: xlsValor(d.hombres), mujeres: xlsValor(d.mujeres), total: xlsValor(d.total) }));
-    });
-    return { totales, grados };
-  }
-  // Excel según la parte de la ficha donde se pulsa.
-  function excelSeccion(i, tipo) {
-    const ie = todas[i];
-    if (!ie) return;
-    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
-    const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
-    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
-    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
-    if (tipo === "estudiantes") { const e = estudiantesIE(ie); return excelDescargar(base + "_estudiantes", [{ nombre: "Totales por nivel", titulo, filas: e.totales }, { nombre: "Estudiantes por grado", titulo, filas: e.grados }]); }
-    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo, filas: analisisFilasIE(ie, i) }]);
-  }
-  function fichaExcel(i) { excelSeccion(i, "identificacion"); }
+    // Excel según la parte de la ficha donde se pulsa.
+    function fichaExcel(i) { excelSeccion(i, "identificacion"); }
   function personalGeneralExcel() {
     const pv = Array.isArray(personalVisible) ? personalVisible : [];
     const filas = pv.map(p => { const o = { institucion: nombreIEPersonal(p), distrito: p.distritoOriginal || p.distrito || "" }; Object.entries(p).forEach(([k, v]) => { if (!k.startsWith("_") && k !== "id") o[xlsPretty(k)] = xlsValor(v); }); return o; });
     excelDocentesUGEL("Personal_general", pv);
   }
-  function analisisGeneralExcel() {
-    const lista = (typeof todas !== "undefined" ? todas : []).map((ie, i) => ({ ie, i })).filter(x => !esFicticia(x.ie));
-    const resumen = [], detalle = [];
-    lista.forEach(x => {
-      const r = resumenDeIE(x.i);
-      resumen.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), codigo: xlsValor(x.ie.codigo), verde: r.cuenta.verde, amarillo: r.cuenta.amarillo, rojo: r.cuenta.rojo, gris: r.cuenta.gris, grados: r.grados.length, niveles: porNivelAG(r.grados).map(n => `${n.nivel}: V${n.verde} A${n.amarillo} R${n.rojo} G${n.gris}`).join(" | ") });
-      analisisFilasIE(x.ie, x.i).forEach(f => detalle.push({ institucion: xlsValor(x.ie.nombre), distrito: xlsValor(x.ie.distrito), ...f }));
-    });
-    excelDescargar("Analisis_general", [{ nombre: "Resumen por IE", titulo: "Resumen del análisis por institución", filas: resumen }, { nombre: "Detalle por grado", titulo: "Análisis por grado de todas las instituciones", filas: detalle }]);
-  }
-  // Estudiantes completos: por grado, subtotal por nivel, total de la IE y resumen de hombres y mujeres.
+    // Estudiantes completos: por grado, subtotal por nivel, total de la IE y resumen de hombres y mujeres.
   function estudiantesIE(ie) {
     const num = v => Number(v) || 0;
     const totales = [], grados = [];
@@ -2761,24 +2613,7 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     ];
     return { totales, grados, resumen };
   }
-  function excelSeccion(i, tipo) {
-    const ie = todas[i];
-    if (!ie) return;
-    const base = "IE_" + String(ie.nombre || i).replace(/[^\w\-]+/g, "_").slice(0, 40);
-    const titulo = `${ie.nombre || ""} · ${ie.distrito || ""}`;
-    if (tipo === "identificacion") return excelDescargar(base + "_identificacion", [{ nombre: "Identificación", titulo, filas: identificacionIE(ie) }]);
-    if (tipo === "docentes") return excelDescargar(base + "_docentes", [{ nombre: "Docentes y personal", titulo, filas: docentesIE(ie) }]);
-    if (tipo === "estudiantes") {
-      const e = estudiantesIE(ie);
-      return excelDescargar(base + "_estudiantes", [
-        { nombre: "Resumen", titulo: titulo + " · Hombres y mujeres", filas: e.resumen },
-        { nombre: "Totales por nivel", titulo, filas: e.totales },
-        { nombre: "Estudiantes por grado", titulo, filas: e.grados }
-      ]);
-    }
-    if (tipo === "analisis") return excelDescargar(base + "_analisis", [{ nombre: "Análisis por grado", titulo, filas: analisisFilasIE(ie, i) }]);
-  }
-  // Matrícula en el mismo formato del Excel de la UGEL: una fila por institución y nivel,
+    // Matrícula en el mismo formato del Excel de la UGEL: una fila por institución y nivel,
   // con hombres y mujeres de cada grado o edad, y una fila de totales.
   function matriculaFormatoUGEL(ie) {
     const num = v => Number(v) || 0;
