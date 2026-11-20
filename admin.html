@@ -697,6 +697,22 @@ tr:hover .thumb{ transform:scale(1.25); }
           <button type="button" data-a="volver">← Volver a la lista</button>
         </div>
         <form data-form="ie" data-id="${esc(ie?.id || "")}">
+          <style>
+            .ie-tab { display:none; }
+            .ie-tab.activa { display:block; }
+            .ie-toolbar { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+            .ie-toolbar button { border-radius:999px; padding:7px 14px; font-size:.88rem; }
+            .ie-toolbar button.activo { background:var(--accent); color:#fff; border-color:var(--accent); }
+          </style>
+          <div class="ie-toolbar">
+            <button type="button" class="activo" data-a="ie-tab" data-tab="basica">Información básica</button>
+            <button type="button" data-a="ie-tab" data-tab="clasif">Clasificación y personal</button>
+            <button type="button" data-a="ie-tab" data-tab="fotos">Fotos</button>
+            <button type="button" data-a="ie-tab" data-tab="ampliados">Datos ampliados</button>
+            <button type="button" data-a="ie-tab" data-tab="mapa">Mapa</button>
+            <button type="button" data-a="ie-tab" data-tab="extra">Campos adicionales</button>
+          </div>
+          <section class="ie-tab activa" data-tab="basica">
           <h3>Información básica</h3>
           <div class="grid">
             <label>Distrito<select name="distrito">${distritos.map(d => `<option value="${esc(d.clave)}" ${d.clave === (v.distrito || "Aplao") ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></label>
@@ -711,6 +727,8 @@ tr:hover .thumb{ transform:scale(1.25); }
               <option ${zona === "Rural" ? "selected" : ""}>Rural</option></select></label>
           </div>
 
+          </section>
+          <section class="ie-tab" data-tab="clasif">
           <h3>Clasificación y personal</h3>
           <div class="grid">
             <label>Nivel educativo<input name="nivel" value="${esc(v.nivel)}" placeholder="Ej. Primaria / Secundaria"></label>
@@ -729,6 +747,8 @@ tr:hover .thumb{ transform:scale(1.25); }
             <textarea name="personalPublico" placeholder="PROFESOR DE AULA; 12&#10;DIRECTOR; 1">${esc((v.personalPublico || []).map(x => `${x.cargo}; ${x.cantidad}`).join("\n"))}</textarea></label>
 
           ${vDetalleEstudiantes(v)}
+          </section>
+          <section class="ie-tab" data-tab="fotos">
           <h3>Fotografías (carrusel)</h3>
           <label>URLs de imágenes, una por línea. La primera es la portada.
             <textarea name="imagenes" data-fotos>${esc(fotos.join("\n"))}</textarea></label>
@@ -754,6 +774,8 @@ tr:hover .thumb{ transform:scale(1.25); }
             <p class="nota">La primera foto es la portada. Usa "Quitar" bajo una miniatura para eliminarla de la lista.</p>
           </div>
 
+          </section>
+          <section class="ie-tab" data-tab="ampliados">
           <h3>Datos ampliados</h3>
           <div class="grid">
             <label>Director<input name="director" value="${esc(v.director)}"></label>
@@ -766,16 +788,21 @@ tr:hover .thumb{ transform:scale(1.25); }
           </div>
           <label class="check" style="margin-top:10px"><input type="checkbox" name="coordsVerificadas" ${v.coordsVerificadas ? "checked" : ""} style="width:auto"> Coordenadas verificadas (pedir confirmación antes de cambiarlas)</label>
 
+          </section>
+          <section class="ie-tab" data-tab="mapa">
           <h3>Ubicación en el mapa</h3>
           <p class="nota">Arrastra el marcador o haz clic en el mapa para cambiar la latitud y la longitud. También puedes escribirlas arriba.</p>
           <div id="mapaForm" style="height:440px;border-radius:12px;border:1px solid var(--border);margin-top:8px"></div>
 
+          </section>
+          <section class="ie-tab" data-tab="extra">
           <h3>Campos adicionales</h3>
           <div id="extras">${(v.extras || []).map(x => filaExtra(x.campo, x.valor)).join("")}</div>
           <div class="acciones" style="margin-top:4px"><button type="button" data-a="extra-add">+ Agregar campo</button></div>
 
           <label style="margin-top:14px">Información adicional<textarea name="info">${esc(v.info)}</textarea></label>
 
+                    </section>
           <div class="acciones">
             <button type="submit" class="primario">Guardar institución</button>
             <button type="button" data-a="volver">Cancelar</button>
@@ -3240,6 +3267,15 @@ tr:hover .thumb{ transform:scale(1.25); }
       }
       else if (a === "det-quitar") b.closest("tr.fila-det")?.remove();
       else if (a === "portada-guardar") await guardarPortada();
+      else if (a === "ie-tab") {
+        const cont = b.closest('form[data-form="ie"]');
+        if (cont) {
+          cont.querySelectorAll('.ie-tab').forEach(sec => sec.classList.toggle('activa', sec.dataset.tab === b.dataset.tab));
+          cont.querySelectorAll('.ie-toolbar button').forEach(x => x.classList.toggle('activo', x === b));
+          // El mapa necesita recalcular su tamaño al mostrarse
+          if (b.dataset.tab === 'mapa') setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+        }
+      }
       else if (a === "portada-ampliar") {
         const panel = document.querySelector(".portada-vista-panel");
         if (document.fullscreenElement) await document.exitFullscreen();
