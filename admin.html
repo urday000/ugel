@@ -2673,6 +2673,8 @@ tr:hover .thumb{ transform:scale(1.25); }
       eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
       boton2Texto: get("boton2Texto"), boton2Accion: get("boton2Accion"), boton2Url: get("boton2Url"),
+      fondosCarrusel: String(fd.get("fondosCarrusel") ?? "").split(/\n/).map(x => x.trim()).filter(Boolean),
+      intervalo: Math.min(60, Math.max(3, Number(get("intervalo")) || 6)),
       mostrarBotones: !!f.querySelector('input[name="mostrarBotones"]')?.checked
     };
   }
@@ -2682,6 +2684,7 @@ tr:hover .thumb{ transform:scale(1.25); }
     if (!d.titulo) return "El título no puede quedar vacío.";
     if (!enlaceOk(d.logo)) return "El logo debe ser un enlace que empiece con https://";
     if (!enlaceOk(d.fondo)) return "La imagen de fondo debe ser un enlace que empiece con https://";
+    if (d.fondosCarrusel.some(u => !enlaceOk(u))) return "Las fotos del carrusel deben ser enlaces que empiecen con https://";
     if (!enlaceOk(d.boton1Url) || !enlaceOk(d.boton2Url)) return "Los enlaces de los botones deben empezar con https://";
     if (d.mostrarBotones && d.boton1Accion === "url" && !d.boton1Url) return "El botón 1 necesita un enlace, porque su acción es “Abrir un enlace”.";
     if (d.mostrarBotones && d.boton2Accion === "url" && !d.boton2Url) return "El botón 2 necesita un enlace, porque su acción es “Abrir un enlace”.";
@@ -2746,6 +2749,12 @@ tr:hover .thumb{ transform:scale(1.25); }
               <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
               <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
             </div>
+            <label style="margin-top:10px">Fotos de fondo adicionales para el carrusel (una por línea)
+              <textarea name="fondosCarrusel" placeholder="https://…">${esc((c.fondosCarrusel || []).join("\n"))}</textarea></label>
+            <div class="grid" style="margin-top:8px">
+              <label>Cambiar de foto cada (segundos)<input name="intervalo" type="number" min="3" max="60" value="${esc(c.intervalo ?? 6)}"></label>
+            </div>
+            <p class="nota">Con una sola imagen de fondo, la portada se muestra fija. Con varias, cambian en orden automáticamente.</p>
           </div>
           <div class="bloque">
             <h3>Colores</h3>

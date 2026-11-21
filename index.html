@@ -1709,6 +1709,9 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
       color-mix(in srgb, var(--p-principal) 25%, transparent) 100%) !important; }
   .botones-portada .btn-p1 { background:linear-gradient(90deg,var(--p-acento),color-mix(in srgb, var(--p-acento) 80%, #ff7a3d)) !important; color:#1c170b !important; }
 </style>
+<style id="portada-carrusel">
+  .portada-diapo { position:absolute; inset:0; background-size:cover; background-position:center; background-repeat:no-repeat; transition:opacity 1.2s ease; }
+</style>
 </head>
 <body>
 <nav class="barra-pub" id="barraPub">
@@ -2952,9 +2955,14 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     st.setProperty("--p-acento", cfg.colorAcento);
     const h = document.getElementById("portada");
     h.style.setProperty("min-height", cfg.altura + "px", "important");
-    const fondo = cfg.fondo ? `background-image:url('${cssUrl(cfg.fondo)}')` : "";
+    // Fondo: una imagen fija, o varias en carrusel (la principal y las adicionales)
+    const lista = [cfg.fondo, ...(Array.isArray(cfg.fondosCarrusel) ? cfg.fondosCarrusel : [])]
+      .map(x => String(x || "").trim()).filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
+    const esCarrusel = lista.length > 1;
+    const fondo = !esCarrusel && lista.length ? `background-image:url('${cssUrl(lista[0])}')` : "";
+    const diapos = esCarrusel ? lista.map((u, i) => `<div class="portada-diapo" style="background-image:url('${cssUrl(u)}');opacity:${i === 0 ? 1 : 0}"></div>`).join("") : "";
     h.innerHTML = `
-      <div class="portada-fondo" style="${fondo}"></div>
+      <div class="portada-fondo" style="${fondo}">${diapos}</div>
       <div class="portada-velo" style="opacity:${Math.min(1, Math.max(0, cfg.fondoOpacidad / 100))}"></div>
       <div class="portada-contenido">
         <div class="logo-ugel"><img src="${esc(cfg.logo || LOGO_DEFAULT)}" alt="Logo UGEL Castilla"></div>
@@ -2964,6 +2972,20 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
         ${cfg.lema ? `<p class="lema-portada">${esc(cfg.lema)}</p>` : ""}
         ${cfg.mostrarBotones ? `<div class="botones-portada">${botonPortada(cfg, 1)}${botonPortada(cfg, 2)}</div>` : ""}
       </div>`;
+    iniciarCarrusel(h, esCarrusel ? cfg.intervalo : 0);
+  }
+  // Cambia la imagen de fondo de la portada cada cierto número de segundos
+  let timerCarrusel = null;
+  function iniciarCarrusel(h, segundos) {
+    clearInterval(timerCarrusel); timerCarrusel = null;
+    const diapos = h.querySelectorAll(".portada-diapo");
+    if (diapos.length < 2) return;
+    let i = 0;
+    timerCarrusel = setInterval(() => {
+      diapos[i].style.opacity = 0;
+      i = (i + 1) % diapos.length;
+      diapos[i].style.opacity = 1;
+    }, Math.max(3, Number(segundos) || 6) * 1000);
   }
   let dbPortada = null;
   // Tolerancia definida en el panel (pestaña Análisis).
