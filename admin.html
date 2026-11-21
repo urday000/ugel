@@ -2711,7 +2711,7 @@ tr:hover .thumb{ transform:scale(1.25); }
     const color = (nombre, etiqueta, valor) => `<label class="color-campo">${etiqueta}<span class="color-caja"><input type="color" name="${nombre}" value="${esc(valor)}"><code>${esc(valor)}</code></span></label>`;
     return `
       <style>
-        .portada-edit { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:18px; align-items:start; }
+        .portada-edit { display:grid; grid-template-columns:minmax(0,1fr); gap:18px; align-items:start; max-width:880px; }
         @media (max-width: 960px) { .portada-edit { grid-template-columns:1fr; } }
         .portada-edit .bloque { margin-bottom:6px; }
         .portada-edit h3 { margin:16px 0 8px; }
@@ -2784,21 +2784,11 @@ tr:hover .thumb{ transform:scale(1.25); }
           </div>
           <div class="acciones">
             <button type="button" class="primario" data-a="portada-guardar">Guardar portada</button>
+            <button type="button" class="primario" data-a="portada-vista-completa">Vista previa a pantalla completa</button>
             <button type="button" data-a="portada-restaurar">Restaurar valores originales</button>
           </div>
           <p class="portada-estado" id="portadaEstado" style="color:#0A6E3A;margin-top:10px">Todos los cambios guardados</p>
         </form>
-        <div class="panel portada-vista-panel" style="margin:0">
-          <div class="portada-vista-barra">
-            <strong>Vista previa en vivo</strong>
-            <span style="flex:1"></span>
-            <button type="button" class="activo" data-ancho="100%" data-a="portada-vista-ancho">Escritorio</button>
-            <button type="button" data-ancho="390px" data-a="portada-vista-ancho">Celular</button>
-            <button type="button" data-a="portada-actualizar-vista" title="Recargar la vista con los valores actuales">↻ Actualizar</button>
-            <button type="button" class="primario" data-a="portada-ampliar" id="btnAmpliarPortada">⛶ Ampliar</button>
-          </div>
-          <iframe id="portadaFrame" src="index.html?vista=portada" title="Vista previa de la portada"></iframe>
-        </div>
       </div>`;
   }
   async function guardarPortada() {
@@ -2814,6 +2804,24 @@ tr:hover .thumb{ transform:scale(1.25); }
     marcarPortadaSinGuardar(false);
     aviso("Portada guardada. Pulsa “Actualizar datos” en la página principal para verla.", true);
   }
+  // Vista previa en pantalla completa: se abre sobre el panel y muestra la página principal real
+  function abrirVistaPortada() {
+    if (document.getElementById("vistaPortadaOverlay")) return;
+    const o = document.createElement("div");
+    o.id = "vistaPortadaOverlay";
+    o.style.cssText = "position:fixed;inset:0;background:rgba(10,20,40,.82);z-index:99999;display:flex;flex-direction:column;padding:12px;gap:10px";
+    o.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;color:#fff;font:600 15px Arial,Helvetica,sans-serif">
+        <span style="flex:1">Vista previa de la portada</span>
+        <span style="opacity:.8;font-weight:400;font-size:13px">Los cambios se ven al instante. Esc para cerrar.</span>
+        <button type="button" data-cerrar-vista style="padding:8px 16px;border-radius:999px;border:0;background:#fff;color:#0E2347;font-weight:700;cursor:pointer">Cerrar</button>
+      </div>
+      <iframe id="portadaFrame" src="index.html?vista=portada" title="Vista previa de la portada" style="flex:1;width:100%;border:0;border-radius:12px;background:#fff"></iframe>`;
+    document.body.appendChild(o);
+    o.querySelector("[data-cerrar-vista]").addEventListener("click", cerrarVistaPortada);
+  }
+  function cerrarVistaPortada() { document.getElementById("vistaPortadaOverlay")?.remove(); }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarVistaPortada(); });
   // Interacción de la pestaña Portada: vista previa en vivo y aviso de cambios sin guardar
   document.addEventListener("input", e => {
     if (e.target.closest && e.target.closest('form[data-form="portada"]')) { marcarPortadaSinGuardar(true); enviarPortadaVista(); }
@@ -3324,6 +3332,7 @@ tr:hover .thumb{ transform:scale(1.25); }
           if (b.dataset.tab === 'mapa') setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
         }
       }
+      else if (a === "portada-vista-completa") abrirVistaPortada();
       else if (a === "portada-ampliar") {
         const panel = document.querySelector(".portada-vista-panel");
         if (document.fullscreenElement) await document.exitFullscreen();
