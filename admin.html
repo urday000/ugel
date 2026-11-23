@@ -3454,7 +3454,8 @@ tr:hover .thumb{ transform:scale(1.25); }
       }
       else if (a === "portada-vista-completa") abrirVistaPortada();
       else if (a === "portada-tab") {
-        const cont = b.closest("form[data-form='portada']");
+        // La barra está fuera del formulario: las secciones se buscan dentro del formulario de portada
+        const cont = document.querySelector("form[data-form='portada']");
         const barra = b.closest(".ie-toolbar");
         if (cont) cont.querySelectorAll(".ie-tab").forEach(sec => sec.classList.toggle("activa", sec.dataset.tab === b.dataset.tab));
         if (barra) barra.querySelectorAll("button").forEach(x => x.classList.toggle("activo", x === b));
