@@ -2713,14 +2713,31 @@ tr:hover .thumb{ transform:scale(1.25); }
   }
   const opcionesAccion = sel => [["mapa", "Abrir el mapa"], ["distritos", "Ir a los distritos"], ["url", "Abrir un enlace"]]
     .map(([v, t]) => `<option value="${v}" ${sel === v ? "selected" : ""}>${t}</option>`).join("");
+  // Galería de imágenes de la portada (en memoria hasta guardar)
+  let galeriaPortada = [];
+  function normalizarGaleria(c) {
+    const clamp = (v, d, mn, mx) => { const n = Number(v); return Number.isFinite(n) ? Math.min(mx, Math.max(mn, n)) : d; };
+    if (Array.isArray(c.imagenes) && c.imagenes.length) {
+      return c.imagenes.filter(i => i && String(i.url || "").trim()).map(i => ({ url: String(i.url).trim(), x: clamp(i.x, 50, 0, 100), y: clamp(i.y, 50, 0, 100), z: clamp(i.z, 100, 100, 250) }));
+    }
+    return [c.fondo, ...(Array.isArray(c.fondosCarrusel) ? c.fondosCarrusel : [])].map(u => String(u || "").trim()).filter(Boolean)
+      .filter((u, i, a) => a.indexOf(u) === i).map(u => ({ url: u, x: 50, y: 50, z: 100 }));
+  }
+  function estiloGaleria(img) {
+    return `background-image:url('${img.url}');background-position:${img.x}% ${img.y}%;background-size:${img.z <= 100 ? "cover" : img.z + "% auto"}`;
+  }
   // Lee el formulario de la portada (valores sin guardar)
   function leerFormPortada() {
     const f = document.querySelector('form[data-form="portada"]');
     if (!f) return null;
     const fd = new FormData(f);
     const get = k => String(fd.get(k) ?? "").trim();
+    const imagenes = galeriaPortada.map(i => ({ url: i.url, x: i.x, y: i.y, z: i.z }));
     return {
-      logo: get("logo"), fondo: get("fondo"),
+      logo: get("logo"),
+      imagenes,
+      fondo: imagenes[0] ? imagenes[0].url : "",
+      fondosCarrusel: imagenes.slice(1).map(i => i.url),
       fondoOpacidad: Math.min(100, Math.max(0, Number(get("fondoOpacidad")) || 0)),
       altura: Math.min(900, Math.max(300, Number(get("altura")) || 520)),
       colorPrincipal: get("colorPrincipal") || "#06281a",
@@ -2728,7 +2745,6 @@ tr:hover .thumb{ transform:scale(1.25); }
       eyebrow: get("eyebrow"), titulo: get("titulo"), subtitulo: get("subtitulo"), lema: get("lema"),
       boton1Texto: get("boton1Texto"), boton1Accion: get("boton1Accion"), boton1Url: get("boton1Url"),
       boton2Texto: get("boton2Texto"), boton2Accion: get("boton2Accion"), boton2Url: get("boton2Url"),
-      fondosCarrusel: String(fd.get("fondosCarrusel") ?? "").split(/\n/).map(x => x.trim()).filter(Boolean),
       intervalo: Math.min(60, Math.max(3, Number(get("intervalo")) || 6)),
       mostrarBotones: !!f.querySelector('input[name="mostrarBotones"]')?.checked
     };
@@ -2759,92 +2775,129 @@ tr:hover .thumb{ transform:scale(1.25); }
     el.textContent = sinGuardar ? "Cambios sin guardar" : "Todos los cambios guardados";
     el.style.color = sinGuardar ? "#b45309" : "#0A6E3A";
   }
+  function galeriaHtml() {
+    if (!galeriaPortada.length) return `<p class="nota">Todavía no hay imágenes. Se usará la foto de fondo por defecto (la fachada de la UGEL).</p>`;
+    return galeriaPortada.map((im, i) => `
+      <div class="img-card${i === 0 ? " principal" : ""}" data-idx="${i}">
+        <div class="img-thumb" style="${estiloGaleria(im)}"></div>
+        <div class="img-info"><b>${i === 0 ? "Primera imagen (principal)" : "Imagen " + (i + 1)}</b>
+          <small>${esc(im.url.length > 70 ? im.url.slice(0, 70) + "…" : im.url)}</small></div>
+        <div class="img-ctl">
+          <button type="button" class="mini" data-a="img-up" data-i="${i}" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
+          <button type="button" class="mini" data-a="img-down" data-i="${i}" ${i === galeriaPortada.length - 1 ? "disabled" : ""}>↓ Bajar</button>
+          <button type="button" class="mini" data-a="img-first" data-i="${i}" ${i === 0 ? "disabled" : ""}>Poner primera</button>
+          <button type="button" class="mini peligro" data-a="img-del" data-i="${i}">Quitar</button>
+        </div>
+        <label>Encuadre horizontal <input type="range" min="0" max="100" value="${im.x}" data-img-i="${i}" data-img-campo="x"></label>
+        <label>Encuadre vertical <input type="range" min="0" max="100" value="${im.y}" data-img-i="${i}" data-img-campo="y"></label>
+        <label>Zoom <input type="range" min="100" max="250" value="${im.z}" data-img-i="${i}" data-img-campo="z"></label>
+      </div>`).join("");
+  }
+  function pintarGaleriaPortada() {
+    const el = document.getElementById("galeriaPortada");
+    if (el) el.innerHTML = galeriaHtml();
+  }
   function vPortada() {
     if (portadaCfg === null) return `<h1 class="titulo">Portada</h1><p class="vacio">Cargando…</p>`;
     const c = portadaCfg;
+    galeriaPortada = normalizarGaleria(c);
+    const t = temaCfg || TEMA_DEFAULT;
     const campo = (nombre, etiqueta, valor, extra = "") => `<label>${etiqueta}<input name="${nombre}" value="${esc(valor)}" ${extra}></label>`;
     const color = (nombre, etiqueta, valor) => `<label class="color-campo">${etiqueta}<span class="color-caja"><input type="color" name="${nombre}" value="${esc(valor)}"><code>${esc(valor)}</code></span></label>`;
+    const pestana = (id, txt, activa) => `<button type="button" class="${activa ? "activo" : ""}" data-a="portada-tab" data-tab="${id}">${txt}</button>`;
     return `
       <style>
-        .portada-edit { display:grid; grid-template-columns:minmax(0,1fr); gap:18px; align-items:start; max-width:880px; }
-        @media (max-width: 960px) { .portada-edit { grid-template-columns:1fr; } }
-        .portada-edit .bloque { margin-bottom:6px; }
-        .portada-edit h3 { margin:16px 0 8px; }
+        .portada-edit { max-width:900px; }
         .color-caja { display:flex; align-items:center; gap:10px; }
         .color-caja input[type=color] { width:56px; height:36px; padding:2px; border-radius:10px; cursor:pointer; }
         .color-caja code { font-size:.85rem; color:#4D6585; }
-        .portada-vista-barra { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
-        .portada-vista-barra button.activo { background:#1456B8; color:#fff; }
-        #portadaFrame { width:100%; height:620px; border:1px solid #CFE6F3; border-radius:14px; background:#fff; transition:width .25s; }
         .portada-estado { font-weight:700; font-size:.9rem; }
-        .portada-vista-panel:fullscreen { background:#fff; padding:14px; overflow:auto; display:flex; flex-direction:column; border-radius:0; }
-        .portada-vista-panel:fullscreen #portadaFrame { width:100% !important; height:calc(100vh - 64px) !important; border-radius:12px; }
-        .portada-vista-panel:fullscreen .portada-vista-barra { margin-bottom:8px; }
+        .galeria { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; margin-top:12px; }
+        .img-card { border:1px solid #cfe3ef; border-radius:12px; padding:10px; background:#fff; }
+        .img-card.principal { border:2px solid #2DB7E8; }
+        .img-thumb { width:100%; height:130px; border-radius:8px; background-color:#e9f3f8; background-repeat:no-repeat; }
+        .img-info { margin:8px 0 4px; font-size:.9rem; }
+        .img-info small { display:block; color:#4D6585; word-break:break-all; font-size:.78rem; }
+        .img-ctl { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+        .img-card label { display:block; font-size:.82rem; margin-top:4px; }
+        .img-agregar { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .img-agregar input { flex:1; min-width:240px; }
+        .ie-tab { display:none; }
+        .ie-tab.activa { display:block; }
+        .ie-toolbar { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+        .ie-toolbar button { border-radius:999px; padding:7px 14px; font-size:.88rem; }
+        .ie-toolbar button.activo { background:var(--accent); color:#fff; border-color:var(--accent); }
       </style>
       <h1 class="titulo">Portada de la página principal</h1>
-      <p class="sub">Los cambios se ven al instante en la vista previa, que es la misma página principal. Pulsa <b>Guardar portada</b> para publicarlos y luego “Actualizar datos” en la página principal.</p>
-      <div class="portada-edit">
-        <form data-form="portada" class="panel" style="margin:0">
-          <div class="bloque">
-            <h3>Colores del sitio</h3>
-            <p class="nota">Estos colores se usan en toda la página principal y en este panel. El celeste es el color predominante.</p>
-            <div class="grid">
-              ${color("tema_principal", "Color predominante (celeste)", (temaCfg || TEMA_DEFAULT).principal)}
-              ${color("tema_profundo", "Azul profundo (títulos y botones)", (temaCfg || TEMA_DEFAULT).profundo)}
-              ${color("tema_claro", "Fondo de las páginas", (temaCfg || TEMA_DEFAULT).claro)}
-              ${color("tema_acento", "Color de acento (botones dorados)", (temaCfg || TEMA_DEFAULT).acento)}
-              ${color("tema_texto", "Color del texto", (temaCfg || TEMA_DEFAULT).texto)}
-            </div>
+      <p class="sub">Edita cada parte por separado y mira el resultado con <b>Vista previa a pantalla completa</b>. Pulsa <b>Guardar portada</b> para publicarla y luego “Actualizar datos” en la página principal.</p>
+      <div class="ie-toolbar">
+        ${pestana("colores", "Colores", true)}
+        ${pestana("logo", "Logo y diseño", false)}
+        ${pestana("imagenes", "Imágenes del fondo", false)}
+        ${pestana("textos", "Textos", false)}
+        ${pestana("botones", "Botones", false)}
+      </div>
+      <form data-form="portada" class="panel portada-edit" style="margin:0">
+        <section class="ie-tab activa" data-tab="colores">
+          <h3>Colores del sitio</h3>
+          <p class="nota">Se usan en toda la página principal y en este panel. El celeste es el color predominante.</p>
+          <div class="grid">
+            ${color("tema_principal", "Color predominante (celeste)", t.principal)}
+            ${color("tema_profundo", "Azul profundo (títulos y botones)", t.profundo)}
+            ${color("tema_claro", "Fondo de las páginas", t.claro)}
+            ${color("tema_acento", "Color de acento (botones dorados)", t.acento)}
+            ${color("tema_texto", "Color del texto", t.texto)}
           </div>
-          <div class="bloque">
-            <h3>Logo y fondo</h3>
-            <div class="grid">
-              ${campo("logo", "Logo (enlace de la imagen)", c.logo, 'placeholder="Vacío = logo de la UGEL"')}
-              ${campo("fondo", "Imagen de fondo (enlace)", c.fondo, 'placeholder="Vacío = foto de fondo por defecto"')}
-              <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
-              <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
-            </div>
-            <label style="margin-top:10px">Fotos de fondo adicionales para el carrusel (una por línea)
-              <textarea name="fondosCarrusel" placeholder="https://…">${esc((c.fondosCarrusel || []).join("\n"))}</textarea></label>
-            <div class="grid" style="margin-top:8px">
-              <label>Cambiar de foto cada (segundos)<input name="intervalo" type="number" min="3" max="60" value="${esc(c.intervalo ?? 6)}"></label>
-            </div>
-            <p class="nota">Con una sola imagen de fondo, la portada se muestra fija. Con varias, cambian en orden automáticamente.</p>
+          <h3>Color de la portada</h3>
+          <div class="grid">
+            ${color("colorPrincipal", "Color de la portada (sobre la imagen)", c.colorPrincipal)}
+            ${color("colorAcento", "Color del botón principal", c.colorAcento)}
           </div>
-          <div class="bloque">
-            <h3>Colores</h3>
-            <div class="grid">
-              ${color("colorPrincipal", "Color principal (fondo)", c.colorPrincipal)}
-              ${color("colorAcento", "Color del botón principal", c.colorAcento)}
-            </div>
+        </section>
+        <section class="ie-tab" data-tab="logo">
+          <h3>Logo y diseño</h3>
+          <div class="grid">
+            ${campo("logo", "Logo (enlace de la imagen)", c.logo, 'placeholder="Vacío = logo de la UGEL"')}
+            <label>Oscurecimiento del fondo (0 a 100)<input name="fondoOpacidad" type="number" min="0" max="100" value="${esc(c.fondoOpacidad)}"></label>
+            <label>Altura de la portada (px)<input name="altura" type="number" min="300" max="900" value="${esc(c.altura)}"></label>
+            <label>Cambiar de imagen cada (segundos)<input name="intervalo" type="number" min="3" max="60" value="${esc(c.intervalo ?? 6)}"></label>
           </div>
-          <div class="bloque">
-            <h3>Textos</h3>
-            ${campo("eyebrow", "Etiqueta superior", c.eyebrow)}
-            <label style="margin-top:10px">Título<input name="titulo" value="${esc(c.titulo)}"></label>
-            <label style="margin-top:10px">Subtítulo<textarea name="subtitulo">${esc(c.subtitulo)}</textarea></label>
-            <label style="margin-top:10px">Lema (línea destacada)<input name="lema" value="${esc(c.lema || "")}"></label>
+        </section>
+        <section class="ie-tab" data-tab="imagenes">
+          <h3>Imágenes del fondo</h3>
+          <p class="nota">Con una sola imagen, la portada se muestra fija. Con varias, cambian en el orden de esta lista. Usa <b>Subir</b>, <b>Bajar</b> o <b>Poner primera</b> para ordenarlas, y los controles de encuadre y zoom para ajustar cómo se ve cada una.</p>
+          <div class="img-agregar">
+            <input id="imgNueva" placeholder="Pega aquí el enlace directo de la imagen (https://…)">
+            <button type="button" class="primario" data-a="img-add">Agregar imagen</button>
           </div>
-          <div class="bloque">
-            <h3>Botones</h3>
-            <label class="check"><input type="checkbox" name="mostrarBotones" ${c.mostrarBotones ? "checked" : ""} style="width:auto"> Mostrar botones</label>
-            <div class="grid" style="margin-top:8px">
-              ${campo("boton1Texto", "Botón 1 - texto", c.boton1Texto)}
-              <label>Botón 1 - acción<select name="boton1Accion">${opcionesAccion(c.boton1Accion)}</select></label>
-              ${campo("boton1Url", "Botón 1 - enlace (si la acción es “Abrir un enlace”)", c.boton1Url, 'placeholder="https://…"')}
-              ${campo("boton2Texto", "Botón 2 - texto", c.boton2Texto)}
-              <label>Botón 2 - acción<select name="boton2Accion">${opcionesAccion(c.boton2Accion)}</select></label>
-              ${campo("boton2Url", "Botón 2 - enlace (si la acción es “Abrir un enlace”)", c.boton2Url, 'placeholder="https://…"')}
-            </div>
+          <div id="galeriaPortada" class="galeria">${galeriaHtml()}</div>
+        </section>
+        <section class="ie-tab" data-tab="textos">
+          <h3>Textos</h3>
+          ${campo("eyebrow", "Etiqueta superior", c.eyebrow)}
+          <label style="margin-top:10px">Título<input name="titulo" value="${esc(c.titulo)}"></label>
+          <label style="margin-top:10px">Subtítulo<textarea name="subtitulo">${esc(c.subtitulo)}</textarea></label>
+          <label style="margin-top:10px">Lema (línea destacada)<input name="lema" value="${esc(c.lema || "")}"></label>
+        </section>
+        <section class="ie-tab" data-tab="botones">
+          <h3>Botones</h3>
+          <label class="check"><input type="checkbox" name="mostrarBotones" ${c.mostrarBotones ? "checked" : ""} style="width:auto"> Mostrar botones</label>
+          <div class="grid" style="margin-top:8px">
+            ${campo("boton1Texto", "Botón 1 - texto", c.boton1Texto)}
+            <label>Botón 1 - acción<select name="boton1Accion">${opcionesAccion(c.boton1Accion)}</select></label>
+            ${campo("boton1Url", "Botón 1 - enlace (si la acción es “Abrir un enlace”)", c.boton1Url, 'placeholder="https://…"')}
+            ${campo("boton2Texto", "Botón 2 - texto", c.boton2Texto)}
+            <label>Botón 2 - acción<select name="boton2Accion">${opcionesAccion(c.boton2Accion)}</select></label>
+            ${campo("boton2Url", "Botón 2 - enlace (si la acción es “Abrir un enlace”)", c.boton2Url, 'placeholder="https://…"')}
           </div>
-          <div class="acciones">
-            <button type="button" class="primario" data-a="portada-guardar">Guardar portada</button>
-            <button type="button" class="primario" data-a="portada-vista-completa">Vista previa a pantalla completa</button>
-            <button type="button" data-a="portada-restaurar">Restaurar valores originales</button>
-          </div>
-          <p class="portada-estado" id="portadaEstado" style="color:#0A6E3A;margin-top:10px">Todos los cambios guardados</p>
-        </form>
-      </div>`;
+        </section>
+        <div class="acciones">
+          <button type="button" class="primario" data-a="portada-guardar">Guardar portada</button>
+          <button type="button" data-a="portada-vista-completa">Vista previa a pantalla completa</button>
+          <button type="button" data-a="portada-restaurar">Restaurar valores originales</button>
+        </div>
+        <p class="portada-estado" id="portadaEstado" style="color:#0A6E3A;margin-top:10px">Todos los cambios guardados</p>
+      </form>`;
   }
   async function guardarPortada() {
     const datos = leerFormPortada();
@@ -2883,6 +2936,18 @@ tr:hover .thumb{ transform:scale(1.25); }
   });
   document.addEventListener("change", e => {
     if (e.target.closest && e.target.closest('form[data-form="portada"]')) { marcarPortadaSinGuardar(true); enviarPortadaVista(); }
+  });
+  document.addEventListener("input", e => {
+    const campo = e.target.dataset && e.target.dataset.imgCampo;
+    if (!campo) return;
+    const idx = Number(e.target.dataset.imgI);
+    if (!galeriaPortada[idx]) return;
+    galeriaPortada[idx][campo] = Number(e.target.value);
+    const im = galeriaPortada[idx];
+    const card = e.target.closest(".img-card");
+    const th = card && card.querySelector(".img-thumb");
+    if (th) { th.style.backgroundPosition = `${im.x}% ${im.y}%`; th.style.backgroundSize = im.z <= 100 ? "cover" : im.z + "% auto"; }
+    marcarPortadaSinGuardar(true); enviarPortadaVista();
   });
   document.addEventListener("fullscreenchange", () => {
     const btn = document.getElementById("btnAmpliarPortada");
@@ -3388,6 +3453,28 @@ tr:hover .thumb{ transform:scale(1.25); }
         }
       }
       else if (a === "portada-vista-completa") abrirVistaPortada();
+      else if (a === "portada-tab") {
+        const cont = b.closest("form[data-form='portada']");
+        const barra = b.closest(".ie-toolbar");
+        if (cont) cont.querySelectorAll(".ie-tab").forEach(sec => sec.classList.toggle("activa", sec.dataset.tab === b.dataset.tab));
+        if (barra) barra.querySelectorAll("button").forEach(x => x.classList.toggle("activo", x === b));
+      }
+      else if (a === "img-add") {
+        const v = (document.getElementById("imgNueva")?.value || "").trim();
+        if (!/^https:\/\//i.test(v)) { aviso("La imagen debe ser un enlace que empiece con https://"); return; }
+        if (galeriaPortada.some(g => g.url === v)) { aviso("Esa imagen ya está en la lista."); return; }
+        galeriaPortada.push({ url: v, x: 50, y: 50, z: 100 });
+        document.getElementById("imgNueva").value = "";
+        pintarGaleriaPortada(); marcarPortadaSinGuardar(true); enviarPortadaVista();
+      }
+      else if (a === "img-up" || a === "img-down" || a === "img-first" || a === "img-del") {
+        const i = Number(b.dataset.i);
+        if (a === "img-del") galeriaPortada.splice(i, 1);
+        if (a === "img-up" && i > 0) [galeriaPortada[i - 1], galeriaPortada[i]] = [galeriaPortada[i], galeriaPortada[i - 1]];
+        if (a === "img-down" && i < galeriaPortada.length - 1) [galeriaPortada[i + 1], galeriaPortada[i]] = [galeriaPortada[i], galeriaPortada[i + 1]];
+        if (a === "img-first" && i > 0) galeriaPortada.unshift(...galeriaPortada.splice(i, 1));
+        pintarGaleriaPortada(); marcarPortadaSinGuardar(true); enviarPortadaVista();
+      }
       else if (a === "portada-ampliar") {
         const panel = document.querySelector(".portada-vista-panel");
         if (document.fullscreenElement) await document.exitFullscreen();

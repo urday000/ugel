@@ -2955,12 +2955,11 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
     st.setProperty("--p-acento", cfg.colorAcento);
     const h = document.getElementById("portada");
     h.style.setProperty("min-height", cfg.altura + "px", "important");
-    // Fondo: una imagen fija, o varias en carrusel (la principal y las adicionales)
-    const lista = [cfg.fondo, ...(Array.isArray(cfg.fondosCarrusel) ? cfg.fondosCarrusel : [])]
-      .map(x => String(x || "").trim()).filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
-    const esCarrusel = lista.length > 1;
-    const fondo = !esCarrusel && lista.length ? `background-image:url('${cssUrl(lista[0])}')` : "";
-    const diapos = esCarrusel ? lista.map((u, i) => `<div class="portada-diapo" style="background-image:url('${cssUrl(u)}');opacity:${i === 0 ? 1 : 0}"></div>`).join("") : "";
+    // Fondo: una imagen fija, o varias en carrusel, cada una con su encuadre y zoom
+    const imgs = imagenesPortada(cfg);
+    const esCarrusel = imgs.length > 1;
+    const fondo = !esCarrusel && imgs.length ? estiloImagen(imgs[0]) : "";
+    const diapos = esCarrusel ? imgs.map((im, i) => `<div class="portada-diapo" style="${estiloImagen(im)};opacity:${i === 0 ? 1 : 0}"></div>`).join("") : "";
     h.innerHTML = `
       <div class="portada-fondo" style="${fondo}">${diapos}</div>
       <div class="portada-velo" style="opacity:${Math.min(1, Math.max(0, cfg.fondoOpacidad / 100))}"></div>
@@ -2973,6 +2972,23 @@ button.ident-cod-caja:hover{ transform:translateY(-4px); box-shadow:0 14px 24px 
         ${cfg.mostrarBotones ? `<div class="botones-portada">${botonPortada(cfg, 1)}${botonPortada(cfg, 2)}</div>` : ""}
       </div>`;
     iniciarCarrusel(h, esCarrusel ? cfg.intervalo : 0);
+  }
+  // Lista de imágenes de la portada: usa la galería nueva o, si no existe, las imágenes anteriores
+  function imagenesPortada(cfg) {
+    const clamp = (v, d, mn, mx) => { const n = Number(v); return Number.isFinite(n) ? Math.min(mx, Math.max(mn, n)) : d; };
+    if (Array.isArray(cfg.imagenes) && cfg.imagenes.length) {
+      return cfg.imagenes.filter(i => i && String(i.url || "").trim()).map(i => ({
+        url: String(i.url).trim(), x: clamp(i.x, 50, 0, 100), y: clamp(i.y, 50, 0, 100), z: clamp(i.z, 100, 100, 250)
+      }));
+    }
+    return [cfg.fondo, ...(Array.isArray(cfg.fondosCarrusel) ? cfg.fondosCarrusel : [])]
+      .map(u => String(u || "").trim()).filter(Boolean).filter((u, i, a) => a.indexOf(u) === i)
+      .map(u => ({ url: u, x: 50, y: 50, z: 100 }));
+  }
+  // Estilo de una imagen: posición y zoom (con !important para vencer las reglas del diseño)
+  function estiloImagen(im) {
+    const tam = im.z <= 100 ? "cover" : im.z + "% auto";
+    return `background-image:url('${cssUrl(im.url)}') !important;background-position:${im.x}% ${im.y}% !important;background-size:${tam} !important`;
   }
   // Cambia la imagen de fondo de la portada cada cierto número de segundos
   let timerCarrusel = null;
