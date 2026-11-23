@@ -278,6 +278,11 @@ tr:hover .thumb{ transform:scale(1.25); }
   .coord-mapa { background:#fff; color:#0E2347; font:600 12px/1.3 Arial, Helvetica, sans-serif; padding:6px 10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); white-space:nowrap; }
   .leaflet-tooltip.coord-pin { background:#fff; color:#0E2347; border:1px solid #2DB7E8; font:600 11px Arial, Helvetica, sans-serif; border-radius:6px; }
 </style>
+<style>
+  .chip-tot { display:inline-block; background:#EEF8FD; border:1px solid #cfe3ef; border-radius:999px; padding:4px 10px; font-size:.86rem; margin:2px 4px 2px 0; }
+  .tabla-det tr.subtotal td { background:#EEF8FD; font-weight:600; }
+  .tabla-det tr.total-gen td { background:#0A2A66; color:#fff; font-weight:700; }
+</style>
 </head>
 <body>
 <div class="gate" id="gateAcceso">
@@ -712,6 +717,8 @@ tr:hover .thumb{ transform:scale(1.25); }
           <div class="ie-toolbar">
             <button type="button" class="activo" data-a="ie-tab" data-tab="basica">Información básica</button>
             <button type="button" data-a="ie-tab" data-tab="clasif">Clasificación y personal</button>
+            <button type="button" data-a="ie-tab" data-tab="docentes">Docentes</button>
+            <button type="button" data-a="ie-tab" data-tab="estudiantes">Estudiantes</button>
             <button type="button" data-a="ie-tab" data-tab="fotos">Fotos</button>
             <button type="button" data-a="ie-tab" data-tab="flex">Criterio flexible</button>
             <button type="button" data-a="ie-tab" data-tab="ampliados">Datos ampliados</button>
@@ -752,6 +759,14 @@ tr:hover .thumb{ transform:scale(1.25); }
           <label style="margin-top:10px">Cargos del personal (uno por línea: cargo; cantidad). Se muestran en la ficha pública, sin nombres.
             <textarea name="personalPublico" placeholder="PROFESOR DE AULA; 12&#10;DIRECTOR; 1">${esc((v.personalPublico || []).map(x => `${x.cargo}; ${x.cantidad}`).join("\n"))}</textarea></label>
 
+          </section>
+          <section class="ie-tab" data-tab="docentes">
+          <h3>Docentes de la institución</h3>
+          ${docentesIE(v)}
+          </section>
+          <section class="ie-tab" data-tab="estudiantes">
+          <h3>Estudiantes</h3>
+          ${resumenEstudiantes(v)}
           ${vDetalleEstudiantes(v)}
           </section>
           <section class="ie-tab" data-tab="fotos">
@@ -1016,6 +1031,46 @@ tr:hover .thumb{ transform:scale(1.25); }
       <td><input type="number" min="0" data-m value="${esc(d.mujeres ?? 0)}" class="num-in"></td>
       <td class="num"><span data-tot>${tot}</span></td>
       <td><button type="button" class="mini peligro" data-a="det-quitar">Quitar</button></td></tr>`;
+  }
+  // Resumen de estudiantes: hombres, mujeres y total por grado, subtotal por nivel y total general
+  function resumenEstudiantes(v) {
+    const niveles = v.matriculaPorNivel || [];
+    if (!niveles.length) return `<p class="nota">Sin datos de matrícula. Impórtalos desde “Importar Excel”.</p>`;
+    const n = x => Number(x) || 0;
+    const gen = { sec: 0, h: 0, m: 0, matricula: 0 };
+    const filas = niveles.map(nv => {
+      const det = nv.detalle || [];
+      let sec = 0, h = 0, m = 0;
+      const filasGrado = det.map(d => {
+        const dh = n(d.hombres), dm = n(d.mujeres), ds = n(d.secciones);
+        sec += ds; h += dh; m += dm;
+        return `<tr><td>${esc(nv.nivel)}</td><td>${esc(d.grado)}</td><td>${ds}</td><td>${dh}</td><td>${dm}</td><td><b>${dh + dm}</b></td></tr>`;
+      }).join("");
+      gen.sec += sec; gen.h += h; gen.m += m; gen.matricula += n(nv.matricula);
+      return filasGrado + `<tr class="subtotal"><td colspan="2">Subtotal ${esc(nv.nivel)}</td><td>${sec}</td><td>${h}</td><td>${m}</td><td>${h + m}</td></tr>`;
+    }).join("");
+    const total = gen.h + gen.m;
+    const aviso = gen.matricula && gen.matricula !== total
+      ? `<p class="nota">La matrícula registrada (${gen.matricula}) no coincide con el total por grados (${total}). Revisa los datos importados.</p>` : "";
+    return `
+      <p><span class="chip-tot">Matrícula registrada: <b>${gen.matricula}</b></span> <span class="chip-tot">Total por grados: <b>${total}</b></span> <span class="chip-tot">Hombres: <b>${gen.h}</b></span> <span class="chip-tot">Mujeres: <b>${gen.m}</b></span></p>
+      <div class="tabla"><table class="tabla-det"><thead><tr><th>Nivel</th><th>Grado / edad</th><th>Cant Sec</th><th>Hombres</th><th>Mujeres</th><th>Total</th></tr></thead>
+      <tbody>${filas}<tr class="total-gen"><td colspan="2">TOTAL GENERAL</td><td>${gen.sec}</td><td>${gen.h}</td><td>${gen.m}</td><td>${total}</td></tr></tbody></table></div>
+      ${aviso}`;
+  }
+  // Docentes y personal de la institución (se vinculan por la clave UGEL)
+  function docentesIE(v) {
+    const pers = Array.isArray(personalCache) ? personalCache : [];
+    const lista = v.claveUGEL ? pers.filter(p => p.claveUGEL === v.claveUGEL) : [];
+    if (!lista.length) return `<p class="nota">No hay personal registrado para esta institución. El personal se vincula por la clave UGEL al importar el archivo de personal.</p>`;
+    const conteo = {};
+    lista.forEach(p => { const k = String(p.tipoTrabajador || "Sin tipo").trim(); conteo[k] = (conteo[k] || 0) + 1; });
+    const resumen = Object.entries(conteo).map(([k, c]) => `<span class="chip-tot">${esc(k)}: <b>${c}</b></span>`).join(" ");
+    const filas = lista.slice().sort((a, b) => String(a.apellidoPaterno || "").localeCompare(String(b.apellidoPaterno || ""))).map(p =>
+      `<tr><td>${esc(p.nombreCompleto || `${p.apellidoPaterno || ""} ${p.apellidoMaterno || ""}, ${p.nombres || ""}`)}</td><td>${esc(p.cargo)}</td><td>${esc(p.situacionLaboral)}</td><td>${esc(p.jornada)}</td><td>${esc(p.categoria)}</td><td>${esc(p.regimen)}</td><td>${p.publico !== false ? "Sí" : "No"}</td></tr>`).join("");
+    return `<p><span class="chip-tot">Total: <b>${lista.length}</b></span> ${resumen}</p>
+      <div class="tabla"><table class="tabla-det"><thead><tr><th>Apellidos y nombres</th><th>Cargo</th><th>Situación laboral</th><th>Jornada</th><th>Cat. rem.</th><th>Régimen</th><th>Visible</th></tr></thead><tbody>${filas}</tbody></table></div>
+      <p class="nota">Información de uso interno del panel. Solo se publica lo que esté marcado como visible.</p>`;
   }
   function vDetalleEstudiantes(v) {
     const niveles = v.matriculaPorNivel || [];
