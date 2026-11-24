@@ -594,7 +594,7 @@ tr:hover .thumb{ transform:scale(1.25); }
           <option value="sinEstudiantes">Sin estudiantes (${dg.sinEst})</option>
           <option value="sinDatos">Sin docentes o sin estudiantes (${dg.sinAlgo})</option>
         </select></label>
-        <label>Buscar<input id="fBuscar" type="search" placeholder="Nombre, código, dirección o director"></label>
+        <label>Buscar<input id="fBuscar" type="search" placeholder="Nombre, N° de IE, código modular, dirección o director"></label>
         <button type="button" data-a="ie-carga-inicial">Cargar datos iniciales</button>
         <button type="button" class="peligro" data-a="ie-del-masivo" id="btnDelMasivo" disabled>🗑️ Eliminar seleccionadas (<span id="contSel">0</span>)</button>
         <button type="button" data-a="ie-verificar-sel">✔ Marcar seleccionadas como verificadas</button>
@@ -655,7 +655,7 @@ tr:hover .thumb{ transform:scale(1.25); }
     const f = $("fDist")?.value || "";
     const q = ($("fBuscar")?.value || "").trim().toLowerCase();
     let lista = instituciones.filter(x => (!f || x.distrito === f) &&
-      (!q || coincideBusqueda([x.nombre, x.codigo, x.direccion, x.director, x.tipo, x.distrito], q)));
+      (!q || coincideBusqueda([x.nombre, x.codigo, x.nroIE, x.direccion, x.director, x.tipo, x.distrito], q)));
     lista = lista.filter(x => cumpleFiltroPend(x, $("fPend")?.value || ""));
     const anexoSel = $("fAnexo")?.value || "";
     lista = lista.filter(x => !anexoSel || (anexoSel === "__sede__" ? !x.anexo : x.anexo === anexoSel));
@@ -2788,9 +2788,8 @@ tr:hover .thumb{ transform:scale(1.25); }
           <button type="button" class="mini" data-a="img-first" data-i="${i}" ${i === 0 ? "disabled" : ""}>Poner primera</button>
           <button type="button" class="mini peligro" data-a="img-del" data-i="${i}">Quitar</button>
         </div>
-        <label>Encuadre horizontal <input type="range" min="0" max="100" value="${im.x}" data-img-i="${i}" data-img-campo="x"></label>
-        <label>Encuadre vertical <input type="range" min="0" max="100" value="${im.y}" data-img-i="${i}" data-img-campo="y"></label>
-        <label>Zoom <input type="range" min="100" max="250" value="${im.z}" data-img-i="${i}" data-img-campo="z"></label>
+        <p class="nota" style="margin:6px 0">Encuadre ${im.x}% · ${im.y}% · zoom ${im.z}%</p>
+        <button type="button" class="primario" data-a="img-encuadre" data-i="${i}">Ajustar encuadre (vista previa)</button>
       </div>`).join("");
   }
   function pintarGaleriaPortada() {
@@ -2911,6 +2910,84 @@ tr:hover .thumb{ transform:scale(1.25); }
     pintarLogoTop();
     marcarPortadaSinGuardar(false);
     aviso("Portada guardada. Pulsa “Actualizar datos” en la página principal para verla.", true);
+  }
+  // Ajuste de encuadre con vista previa: arrastra la imagen, usa la rueda o los controles
+  function abrirEncuadre(idx) {
+    const original = galeriaPortada[idx];
+    if (!original) return;
+    const cur = { ...original };
+    const cfg = leerFormPortada() || portadaCfg || {};
+    document.getElementById("encuadreOverlay")?.remove();
+    const o = document.createElement("div");
+    o.id = "encuadreOverlay";
+    o.style.cssText = "position:fixed;inset:0;background:rgba(10,20,40,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px";
+    o.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:1000px;width:100%;padding:16px;font-family:Arial,Helvetica,sans-serif;color:#0E2347">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <b style="flex:1;font-size:16px">Ajustar encuadre · imagen ${idx + 1}${idx === 0 ? " (principal)" : ""}</b>
+          <span style="font-size:12px;color:#4D6585">Arrastra la imagen para moverla · rueda del mouse para acercar</span>
+        </div>
+        <div id="encBox" style="position:relative;width:100%;aspect-ratio:16/6;border-radius:10px;overflow:hidden;cursor:grab;background:#e9f3f8;user-select:none;touch-action:none">
+          <div id="encImg" style="position:absolute;inset:0;background-repeat:no-repeat"></div>
+          <div id="encVelo" style="position:absolute;inset:0"></div>
+          <div id="encTxt" style="position:absolute;left:5%;right:5%;bottom:10%;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;font-size:13px">
+          <label>Horizontal <b id="encX"></b><input type="range" min="0" max="100" id="encRX" style="width:100%"></label>
+          <label>Vertical <b id="encY"></b><input type="range" min="0" max="100" id="encRY" style="width:100%"></label>
+          <label>Zoom <b id="encZ"></b><input type="range" min="100" max="250" id="encRZ" style="width:100%"></label>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+          <button type="button" data-enc="centrar">Centrar</button>
+          <button type="button" data-enc="cancelar">Cancelar</button>
+          <button type="button" class="primario" data-enc="aplicar">Aplicar encuadre</button>
+        </div>
+        <p style="font-size:12px;color:#4D6585;margin:8px 0 0">La vista muestra cómo se verá en la portada. El texto y el color son los actuales del formulario.</p>
+      </div>`;
+    document.body.appendChild(o);
+    const box = o.querySelector("#encBox");
+    const q = id => o.querySelector(id);
+    const clamp = (v, mn, mx) => Math.min(mx, Math.max(mn, v));
+    const pintar = () => {
+      const img = q("#encImg");
+      img.style.backgroundImage = `url('${cur.url}')`;
+      img.style.backgroundPosition = `${cur.x}% ${cur.y}%`;
+      img.style.backgroundSize = cur.z <= 100 ? "cover" : cur.z + "% auto";
+      q("#encVelo").style.background = cfg.colorPrincipal || "#06281a";
+      q("#encVelo").style.opacity = String(((Number(cfg.fondoOpacidad) || 0) / 100) * 0.9);
+      q("#encTxt").innerHTML = `<div style="font-size:12px;font-weight:700;opacity:.9">${esc(cfg.eyebrow || "")}</div>
+        <div style="font-size:clamp(18px,3.2vw,34px);font-weight:700;line-height:1.1">${esc(cfg.titulo || "")}</div>
+        <div style="font-size:13px;opacity:.9;margin-top:4px">${esc(cfg.lema || "")}</div>`;
+      q("#encX").textContent = cur.x + "%"; q("#encY").textContent = cur.y + "%"; q("#encZ").textContent = cur.z + "%";
+      q("#encRX").value = cur.x; q("#encRY").value = cur.y; q("#encRZ").value = cur.z;
+    };
+    let arrastre = null;
+    box.addEventListener("pointerdown", e => {
+      arrastre = { x: e.clientX, y: e.clientY, sx: cur.x, sy: cur.y };
+      box.setPointerCapture(e.pointerId); box.style.cursor = "grabbing";
+    });
+    box.addEventListener("pointermove", e => {
+      if (!arrastre) return;
+      const w = box.clientWidth, h = box.clientHeight, k = 0.8 / (cur.z / 100);
+      cur.x = clamp(arrastre.sx - ((e.clientX - arrastre.x) / w) * 100 * k, 0, 100);
+      cur.y = clamp(arrastre.sy - ((e.clientY - arrastre.y) / h) * 100 * k, 0, 100);
+      pintar();
+    });
+    const soltar = () => { arrastre = null; box.style.cursor = "grab"; };
+    box.addEventListener("pointerup", soltar);
+    box.addEventListener("pointercancel", soltar);
+    box.addEventListener("wheel", e => { e.preventDefault(); cur.z = clamp(cur.z - e.deltaY / 10, 100, 250); pintar(); }, { passive: false });
+    q("#encRX").addEventListener("input", e => { cur.x = Number(e.target.value); pintar(); });
+    q("#encRY").addEventListener("input", e => { cur.y = Number(e.target.value); pintar(); });
+    q("#encRZ").addEventListener("input", e => { cur.z = Number(e.target.value); pintar(); });
+    o.querySelector('[data-enc="centrar"]').addEventListener("click", () => { cur.x = 50; cur.y = 50; cur.z = 100; pintar(); });
+    o.querySelector('[data-enc="cancelar"]').addEventListener("click", () => o.remove());
+    o.querySelector('[data-enc="aplicar"]').addEventListener("click", () => {
+      galeriaPortada[idx] = { ...galeriaPortada[idx], x: Math.round(cur.x), y: Math.round(cur.y), z: Math.round(cur.z) };
+      o.remove();
+      pintarGaleriaPortada(); marcarPortadaSinGuardar(true); enviarPortadaVista();
+    });
+    pintar();
   }
   // Vista previa en pantalla completa: se abre sobre el panel y muestra la página principal real
   function abrirVistaPortada() {
@@ -3460,6 +3537,7 @@ tr:hover .thumb{ transform:scale(1.25); }
         if (cont) cont.querySelectorAll(".ie-tab").forEach(sec => sec.classList.toggle("activa", sec.dataset.tab === b.dataset.tab));
         if (barra) barra.querySelectorAll("button").forEach(x => x.classList.toggle("activo", x === b));
       }
+      else if (a === "img-encuadre") abrirEncuadre(Number(b.dataset.i));
       else if (a === "img-add") {
         const v = (document.getElementById("imgNueva")?.value || "").trim();
         if (!/^https:\/\//i.test(v)) { aviso("La imagen debe ser un enlace que empiece con https://"); return; }
